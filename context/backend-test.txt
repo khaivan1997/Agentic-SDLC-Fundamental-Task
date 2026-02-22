@@ -29,12 +29,15 @@ This document outlines the testing strategy for the Spring Boot backend (`com.ta
 - **Database Context**: Tests will load the full Spring Application Context and connect to an actual, isolated in-memory H2 test database.
 - **State Management**: The database should be cleared or reset between test executions (e.g., using `@DataJpaTest` or `@Transactional` rollback).
 - **Test Cases**:
-    - **Create Task (Valid)**: Send a `POST` request with valid JSON. Verify `201 Created` status and the returned JSON structure.
-    - **Create Task (Invalid)**: Send a `POST` request with an empty title. Verify `400 Bad Request`.
-    - **Get All Tasks**: Send a `GET` request. Verify `200 OK` and a JSON array.
-    - **Get Task by ID**: Send a `GET` request. Verify `200 OK` and the correct JSON object.
-    - **Update Task**: Send a `PUT` request with modified JSON. Verify `200 OK` and the updated fields in the response.
-    - **Delete Task**: Send a `DELETE` request. Verify `204 No Content`. Verify a subsequent `GET` for the ID returns `404 Not Found`.
+    - **Create Task (Valid)**: Send a `POST` request to `/api/tasks` with valid JSON containing a title (max 100 chars), optional description (max 500 chars), status ("TODO", "IN_PROGRESS", or "DONE"), and optional dueDate. Verify `201 Created` status and the returned JSON structure.
+    - **Create Task (Invalid - Missing Title)**: Send a `POST` request to `/api/tasks` with an empty title. Verify `400 Bad Request` per `@NotBlank` validation rules.
+    - **Create Task (Invalid - Title Too Long)**: Send a `POST` request to `/api/tasks` with a title exceeding 100 characters. Verify `400 Bad Request` per `@Size` validation rules.
+    - **Get All Tasks**: Send a `GET` request to `/api/tasks`. Verify `200 OK` and a JSON array representing all retrieved tasks.
+    - **Get Task by ID**: Send a `GET` request to `/api/tasks/{id}`. Verify `200 OK` and the correct JSON object.
+    - **Get Task by ID (Not Found)**: Send a `GET` request to `/api/tasks/{invalid_id}`. Verify `404 Not Found` response.
+    - **Update Task**: Send a `PUT` request to `/api/tasks/{id}` with modified JSON. Verify `200 OK` and that the updated fields are reflected in the response.
+    - **Delete Task**: Send a `DELETE` request to `/api/tasks/{id}`. Verify `204 No Content`. Verify a subsequent `GET` for the ID returns `404 Not Found`.
+    - **CORS Verification**: Send an `OPTIONS` request to `/api/tasks` from a simulated frontend origin. Verify the server responds with appropriate CORS headers (`Access-Control-Allow-Origin`, etc.) to ensure frontend-backend communication.
 
 ## 3. Technology Stack for Testing
 - **JUnit 5 (Jupiter)**: The primary testing framework.
