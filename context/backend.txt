@@ -26,21 +26,30 @@ The application will use an in-memory database (`jdbc:h2:mem:taskdb`) which rese
    - Retrieves all tasks.
    - Response: `200 OK` with JSON array of tasks.
 
-2. **POST `/api/tasks`**
+2. **GET `/api/tasks/{id}`**
+   - Retrieves a single task by its ID.
+   - Response: `200 OK` with the task JSON object, or `404 Not Found`.
+
+3. **POST `/api/tasks`**
    - Creates a new task.
-   - Request Body: JSON with `title`, optional `description`, `status` (default TODO), and optional `due_date`.
+   - Request Body: JSON with `title` (required), optional `description`, optional `status` (defaults to "TODO" if omitted), and optional `dueDate`.
    - Response: `201 Created` with the created task object.
 
-3. **PUT `/api/tasks/{id}`**
+4. **PUT `/api/tasks/{id}`**
    - Updates an existing task.
    - Request Body: JSON with updated fields.
    - Response: `200 OK` with updated task, or `404 Not Found`.
 
-4. **DELETE `/api/tasks/{id}`**
+5. **DELETE `/api/tasks/{id}`**
    - Deletes a task by ID.
    - Response: `204 No Content` on success, or `404 Not Found`.
 
-## Validation
-- `title` is mandatory and cannot be blank.
-- Status must be a valid state.
-- Meaningful error messages will be returned for validation failures (400 Bad Request).
+## Validation (Bean Validation)
+- `title`: Required (`@NotBlank`), max 100 characters (`@Size`).
+- `description`: Optional, max 500 characters (`@Size`).
+- `status`: Must be a valid enum value ("TODO", "IN_PROGRESS", "DONE"). Defaults to "TODO" if not provided on creation.
+- Meaningful error messages are returned for validation failures (`400 Bad Request`).
+
+## CORS
+- CORS is enabled on `/api/**` to allow frontend-backend communication during development and in the bundled WAR deployment.
+

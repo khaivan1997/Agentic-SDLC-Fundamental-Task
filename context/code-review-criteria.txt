@@ -1,0 +1,21 @@
+# Code Review Criteria
+
+This checklist is used during the code review phase to verify that the generated code meets the requirements of the Agentic SDLC Fundamental Task, keeping in mind the scope of a simple, full-stack application.
+
+## 1. Functional Requirements Verification
+- [ ] **Data Model:** The Task entity matches the required schema (`id`, `title`, `description`, `status`, `dueDate`).
+- [ ] **Backend API:** All 5 required REST endpoints (GET all, GET by ID, POST, PUT, DELETE) are implemented and return appropriate HTTP status codes.
+- [ ] **Frontend UI:** The React app successfully connects to the backend and can perform all CRUD operations.
+- [ ] **Validation:** Title length (max 100) and existence are validated. Meaningful error messages are displayed in the UI when validation fails.
+- [ ] **Bonus Features:** Task grouping (columns), Task sorting, and Task search/filter functionalities are implemented.
+
+## 2. Architecture & Infrastructure
+- [ ] **Database:** In-memory H2 database is used correctly.
+- [ ] **CORS:** Frontend origins are allowed by the backend `/api/**` endpoints.
+- [ ] **Maven Build:** The project uses a multi-module structure where the backend WAR naturally serves the bundled frontend static assets.
+
+## 3. General Readability & Coding Style
+- [ ] **Spring Boot:** Clear separation of concerns (Controller → Service → Repository).
+- [ ] **React/TS:** Use of functional components, hooks, and explicit TypeScript interfaces instead of `any`.
+- [ ] **API Service:** Frontend abstract API calls into a centralized service layer (e.g., `api.ts`).
+- [ ] **Clean Code:** Code is free of unused imports, console.log statements, and magic numbers. Names are descriptive and consistent.

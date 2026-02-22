@@ -1,28 +1,31 @@
 import axios from 'axios';
 import type { Task } from '../types/Task';
 
-const API_BASE_URL = 'http://localhost:8080/api/tasks';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/tasks';
+const apiClient = axios.create({
+    baseURL: API_BASE_URL
+});
 
 export const getTasks = async (): Promise<Task[]> => {
-    const response = await axios.get(API_BASE_URL);
+    const response = await apiClient.get('');
     return response.data;
 };
 
 export const getTaskById = async (id: number): Promise<Task> => {
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    const response = await apiClient.get(`/${id}`);
     return response.data;
 };
 
 export const createTask = async (task: Task): Promise<Task> => {
-    const response = await axios.post(API_BASE_URL, task);
+    const response = await apiClient.post('', task);
     return response.data;
 };
 
 export const updateTask = async (id: number, task: Task): Promise<Task> => {
-    const response = await axios.put(`${API_BASE_URL}/${id}`, task);
+    const response = await apiClient.put(`/${id}`, task);
     return response.data;
 };
 
 export const deleteTask = async (id: number): Promise<void> => {
-    await axios.delete(`${API_BASE_URL}/${id}`);
+    await apiClient.delete(`/${id}`);
 };

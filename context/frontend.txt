@@ -14,7 +14,9 @@ The frontend is a Single Page Application (SPA) built with React and TypeScript,
 
 ### 1. Dashboard View
 - A central view that displays all existing tasks fetched from the backend.
-- Tasks are visually separated into distinct sections or columns based on their current status: "To Do", "In Progress", and "Done".
+- Tasks are visually separated into distinct sections or columns based on their current status: "To Do", "In Progress", and "Done" (fulfilling the 'group tasks into categories' bonus requirement).
+- **Search & Filter**: Includes a search bar to filter tasks by title/description, fulfilling the optional search/filter requirement.
+- **Sorting**: A dropdown allows sorting tasks by created order, status, or due date (fulfills optional requirement from request.txt).
 
 ### 2. Task Card (`TaskCard.tsx`)
 - Displays individual task details: Title, Description, Status, and Due Date.
@@ -32,11 +34,13 @@ The frontend is a Single Page Application (SPA) built with React and TypeScript,
   - Due Date (Date picker, Optional)
 - **Validation**:
   - Client-side validation to ensure the title is filled before submission.
+  - Character limit enforcement (100 for title, 500 for description).
   - Loading states while saving to prevent double submissions.
+  - **Error Display**: Displays server-side validation errors (e.g., field-level errors from Bean Validation) and generic API failure messages to the user.
 
 ### 4. API Integration (`api.ts`)
-- A centralized service layer to handle all Axios calls to the backend endpoints (`/api/tasks`).
-- Handles response parsing and basic error catching.
+- A centralized Axios client with a configurable base URL (`VITE_API_BASE_URL` env variable, defaults to `/api/tasks` for WAR deployment).
+- Handles response parsing and error catching.
 
 ## Styling Approach
 - Clean, minimalist, and responsive design using Tailwind CSS utility classes.

@@ -1,13 +1,14 @@
 # Task Manager Web Application - Architecture & Deployment Guide
 
 ## 1. Technologies & Versions
-- **Backend Framework**: Spring Boot 3.4.3 (Java 17)
+- **Backend Framework**: Spring Boot 3.4.3 (Java 17+)
 - **Frontend Library**: React 18.3 (with TypeScript)
 - **Frontend Build Tool**: Vite 6.2
 - **Styling**: TailwindCSS 4.0
 - **Database**: H2 (In-Memory Database)
-- **Build Server**: Maven 3.x
+- **Build Tool**: Maven 3.x
 - **HTTP Client**: Axios
+- **Communication**: REST API with JSON
 
 ## 2. Multi-Module Project Structure
 To streamline the build process and package everything into a single deployable artifact, the project should be structured as a Maven Multi-Module project. 

@@ -2,6 +2,7 @@ package com.taskmanager.service;
 
 import com.taskmanager.exception.ResourceNotFoundException;
 import com.taskmanager.model.Task;
+import com.taskmanager.model.TaskStatus;
 import com.taskmanager.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,9 @@ public class TaskService {
     }
 
     public Task createTask(Task task) {
+        if (task.getStatus() == null) {
+            task.setStatus(TaskStatus.TODO);
+        }
         return taskRepository.save(task);
     }
 
@@ -36,7 +40,7 @@ public class TaskService {
 
         task.setTitle(taskDetails.getTitle());
         task.setDescription(taskDetails.getDescription());
-        task.setStatus(taskDetails.getStatus());
+        task.setStatus(taskDetails.getStatus() != null ? taskDetails.getStatus() : TaskStatus.TODO);
         task.setDueDate(taskDetails.getDueDate());
 
         return taskRepository.save(task);

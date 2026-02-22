@@ -10,6 +10,8 @@ export default function TaskList() {
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [sortBy, setSortBy] = useState<'created' | 'status' | 'dueDate'>('created');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const fetchTasks = async () => {
         try {
@@ -65,11 +67,55 @@ export default function TaskList() {
         }
     };
 
+    const getStatusRank = (status: TaskStatusType) => {
+        switch (status) {
+            case TaskStatus.TODO:
+                return 0;
+            case TaskStatus.IN_PROGRESS:
+                return 1;
+            case TaskStatus.DONE:
+                return 2;
+            default:
+                return 3;
+        }
+    };
+
+    const filteredTasks = tasks.filter((task) => {
+        if (!searchTerm.trim()) {
+            return true;
+        }
+
+        const keyword = searchTerm.trim().toLowerCase();
+        return task.title.toLowerCase().includes(keyword) ||
+            (task.description ?? '').toLowerCase().includes(keyword);
+    });
+
+    const sortedTasks = [...filteredTasks].sort((a, b) => {
+        if (sortBy === 'status') {
+            const statusDiff = getStatusRank(a.status) - getStatusRank(b.status);
+            if (statusDiff !== 0) {
+                return statusDiff;
+            }
+            return (a.id ?? 0) - (b.id ?? 0);
+        }
+
+        if (sortBy === 'dueDate') {
+            const aTime = a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY;
+            const bTime = b.dueDate ? new Date(b.dueDate).getTime() : Number.POSITIVE_INFINITY;
+            if (aTime !== bTime) {
+                return aTime - bTime;
+            }
+            return (a.id ?? 0) - (b.id ?? 0);
+        }
+
+        return (a.id ?? 0) - (b.id ?? 0);
+    });
+
     // Group tasks by status for a Kanban-ish layout (Optional Bonus feature)
     const groupedTasks = {
-        [TaskStatus.TODO]: tasks.filter(t => t.status === TaskStatus.TODO),
-        [TaskStatus.IN_PROGRESS]: tasks.filter(t => t.status === TaskStatus.IN_PROGRESS),
-        [TaskStatus.DONE]: tasks.filter(t => t.status === TaskStatus.DONE),
+        [TaskStatus.TODO]: sortedTasks.filter(t => t.status === TaskStatus.TODO),
+        [TaskStatus.IN_PROGRESS]: sortedTasks.filter(t => t.status === TaskStatus.IN_PROGRESS),
+        [TaskStatus.DONE]: sortedTasks.filter(t => t.status === TaskStatus.DONE),
     };
 
     return (
@@ -86,6 +132,28 @@ export default function TaskList() {
             </div>
 
             <div className="w-full">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full md:max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 bg-white"
+                        placeholder="Search by title or description"
+                    />
+                    <label className="text-sm text-gray-600 flex items-center gap-2 justify-end">
+                        Sort by
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as 'created' | 'status' | 'dueDate')}
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 bg-white"
+                        >
+                            <option value="created">Created order</option>
+                            <option value="status">Status</option>
+                            <option value="dueDate">Due date</option>
+                        </select>
+                    </label>
+                </div>
+
                 {error ? (
                     <div className="bg-red-50 text-red-700 p-4 rounded-xl text-center shadow-sm border border-red-100">
                         {error}
@@ -97,6 +165,10 @@ export default function TaskList() {
                 ) : tasks.length === 0 ? (
                     <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
                         <p className="text-gray-500 text-lg">No tasks found. Get started by adding one above!</p>
+                    </div>
+                ) : filteredTasks.length === 0 ? (
+                    <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                        <p className="text-gray-500 text-lg">No tasks match your search.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">

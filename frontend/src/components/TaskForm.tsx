@@ -65,7 +65,9 @@ export default function TaskForm({ taskToEdit, onSave, onCancel }: TaskFormProps
                 setDueDate('');
             }
         } catch (err: any) {
-            setError(err?.response?.data?.message || 'Failed to save task. Please try again.');
+            const responseData = err?.response?.data;
+            const fieldErrors = responseData?.errors ? Object.values(responseData.errors).join(', ') : null;
+            setError(fieldErrors || responseData?.message || 'Failed to save task. Please try again.');
             setIsSubmitting(false);
         }
     };
