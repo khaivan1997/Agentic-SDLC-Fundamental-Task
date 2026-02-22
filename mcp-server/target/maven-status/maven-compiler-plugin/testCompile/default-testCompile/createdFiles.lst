@@ -1,0 +1,3 @@
+com/taskmanager/mcp/tools/TaskMcpToolsTest.class
+com/taskmanager/mcp/McpProtocolHandshakeIT.class
+com/taskmanager/mcp/McpServerIntegrationTests.class

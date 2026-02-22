@@ -19,9 +19,8 @@ export default function TaskList() {
             const data = await getTasks();
             setTasks(data);
             setError(null);
-        } catch (err: any) {
+        } catch {
             setError('Could not connect to the backend server. Make sure Spring Boot is running.');
-            console.error(err);
         } finally {
             setIsLoading(false);
         }
@@ -46,13 +45,14 @@ export default function TaskList() {
             const task = tasks.find(t => t.id === id);
             if (task) {
                 // Optimistic update
-                setTasks(tasks.map(t => t.id === id ? { ...t, status } : t));
+                setTasks((currentTasks) => currentTasks.map(t => t.id === id ? { ...t, status } : t));
                 await updateTask(id, { ...task, status });
+                setError(null);
             }
-        } catch (err) {
+        } catch {
             // Revert on error
             await fetchTasks();
-            alert('Failed to update status');
+            setError('Failed to update task status.');
         }
     };
 
@@ -61,8 +61,8 @@ export default function TaskList() {
             try {
                 await deleteTask(id);
                 await fetchTasks();
-            } catch (err) {
-                alert('Failed to delete task');
+            } catch {
+                setError('Failed to delete task.');
             }
         }
     };

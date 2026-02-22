@@ -1,0 +1,3 @@
+com/taskmanager/repository/TaskRepository.class
+com/taskmanager/model/Task.class
+com/taskmanager/model/TaskStatus.class

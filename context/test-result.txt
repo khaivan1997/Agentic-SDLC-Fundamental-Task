@@ -1,111 +1,158 @@
-# Code Review & Test Results
+# Code Review & Test Results — Advanced MCP Task
 
-This document contains the results of the code review (Phase 7) and test verification (Phase 9) as defined in `AI-USAGE.md`.
+Review date: 2026-02-22
+Covers: Backend PostgreSQL migration, api-models shared module, MCP server, frontend improvements
 
----
 
-## Part 1: Code Review (Claude reviewing GPT-generated code)
+## Part 1: Backend PostgreSQL Migration
 
-### 1. Functional Requirements — PASS
+### 1.1 `backend/pom.xml`
 
-| Requirement | File(s) | Verdict |
-| :--- | :--- | :--- |
-| Task entity with all fields | `Task.java` | ✅ `id`, `title`, `description`, `status`, `dueDate` all present |
-| `id` auto-generated | `Task.java:13` | ✅ `@GeneratedValue(strategy = GenerationType.IDENTITY)` |
-| `title` required, max 100 | `Task.java:16-18` | ✅ `@NotBlank` + `@Size(max=100)` + `@Column(nullable=false, length=100)` |
-| `description` optional, max 500 | `Task.java:21-22` | ✅ `@Size(max=500)` + `@Column(length=500)` |
-| `status` enum (TODO, IN_PROGRESS, DONE) | `TaskStatus.java` | ✅ Correct enum values |
-| `status` defaults to TODO | `Task.java:33`, `TaskService.java:32-34` | ✅ Default in constructor + service-level null check |
-| `dueDate` optional | `Task.java:29-30` | ✅ Nullable `LocalDate` |
-| GET /api/tasks | `TaskController.java:24-27` | ✅ Returns `200 OK` |
-| GET /api/tasks/{id} | `TaskController.java:29-32` | ✅ Returns `200 OK` or `404` via `ResourceNotFoundException` |
-| POST /api/tasks | `TaskController.java:34-37` | ✅ `@Valid` + Returns `201 Created` |
-| PUT /api/tasks/{id} | `TaskController.java:39-42` | ✅ `@Valid` + Returns `200 OK` or `404` |
-| DELETE /api/tasks/{id} | `TaskController.java:44-48` | ✅ Returns `204 No Content` or `404` |
-| Bean Validation | `TaskController.java` | ✅ `@Valid` on `@RequestBody` for POST and PUT |
-| CORS enabled | `CorsConfig.java:16` | ✅ `/api/**` mapped with correct methods |
-| H2 database | `application.properties:5` | ✅ `jdbc:h2:mem:taskdb` |
-
-### 2. Frontend Requirements — PASS
-
-| Requirement | File(s) | Verdict |
-| :--- | :--- | :--- |
-| Home page lists all tasks | `TaskList.tsx` | ✅ Fetches via `getTasks()` on mount |
-| Tasks grouped by status columns | `TaskList.tsx:114-119` | ✅ Kanban-style: TODO, IN_PROGRESS, DONE columns |
-| Form to add new task | `TaskForm.tsx` | ✅ Unified create/edit form |
-| Edit existing tasks | `TaskCard.tsx:46`, `TaskList.tsx:34-42` | ✅ Edit button triggers form population |
-| Delete with confirmation | `TaskList.tsx:59-68` | ✅ `window.confirm()` before delete |
-| Status dropdown on card | `TaskCard.tsx:25-33` | ✅ Inline `<select>` with optimistic update |
-| Sort by status/due date | `TaskList.tsx:93-112` | ✅ 3 sort modes: created, status, dueDate |
-| Search/filter | `TaskList.tsx:83-91` | ✅ Filters by title and description |
-| Title required validation | `TaskForm.tsx:35-37` | ✅ Client-side check |
-| Character limit (100/500) | `TaskForm.tsx:39-46, 97, 110` | ✅ Client-side + `maxLength` attribute |
-| Error display on API failure | `TaskForm.tsx:67-71` | ✅ Parses field-level errors + fallback message |
-| Configurable API URL | `api.ts:4` | ✅ `VITE_API_BASE_URL` env variable with `/api/tasks` default |
-| Vite proxy for dev | `vite.config.ts:8-14` | ✅ Proxies `/api` to `localhost:8080` |
-
-### 3. Architecture & Code Quality — PASS
-
-| Criteria | Verdict |
-| :--- | :--- |
-| Layered architecture (Controller → Service → Repository) | ✅ No business logic in controller |
-| Constructor injection | ✅ Both `TaskController` and `TaskService` use `@Autowired` on constructor |
-| Functional components with hooks | ✅ All components use `useState`, `useEffect` |
-| TypeScript types (no `any`) | ⚠️ Minor: `err: any` in catch blocks (`TaskList.tsx:22`, `TaskForm.tsx:67`). Acceptable for error handling. |
-| Centralized API service | ✅ `api.ts` with Axios client |
-| WAR deployment support | ✅ `BackendApplication` extends `SpringBootServletInitializer` |
-| No unused imports | ✅ All imports are used |
-| Descriptive naming | ✅ `handleSave`, `handleDelete`, `handleStatusChange`, `fetchTasks` |
-| `key` prop on lists | ✅ `task.id` used as key in all `.map()` calls |
-
-### 4. Issues Found (Minor)
-
-1. **`err: any` in catch blocks** — `TaskList.tsx:22` and `TaskForm.tsx:67` use `any` for caught errors. This is a common TypeScript pattern for error handling and does not affect functionality, but could be improved with an `AxiosError` type.
-2. **`console.error` in production** — `TaskList.tsx:24` logs errors to console. Acceptable for debugging but should be removed or replaced with a logger in production.
-
-**Severity: Low. No blockers identified.**
-
----
-
-## Part 2: Test Results (Acceptance Verification)
-
-### E2E Browser Testing
-**Method**: Autonomous Browser Subagent on `http://localhost:8080/`
-
-| Step | Action | Result |
-| :--- | :--- | :--- |
-| App Load | Navigate to `/` | ✅ React app served from WAR |
-| UI Rendering | Check header, form, columns | ✅ "Task Manager" header, 3 status columns visible |
-| Create Task | Title = "Test task", Status = TODO | ✅ Task appears in TODO column |
-| Edit Task | Click Edit, change title | ✅ Form populated, update saved |
-| Status Change | Dropdown TODO → DONE | ✅ Task moves to DONE column |
-| Delete Task | Click Delete, confirm | ✅ Task removed from list |
-| Search | Type keyword in search bar | ✅ Tasks filtered by title/description |
-| Sort | Select "Due date" from sort dropdown | ✅ Tasks reordered correctly |
-
-### API Acceptance Criteria
-
-| Endpoint / Feature | Expected | Actual | Status |
+| Change | Expected | Actual | Status |
 | :--- | :--- | :--- | :--- |
-| `GET /api/tasks` | `200 OK` + JSON array | `200 OK` + JSON array | ✅ |
-| `GET /api/tasks/{id}` | `200 OK` or `404` | `200 OK` or `404` | ✅ |
-| `POST /api/tasks` (valid) | `201 Created` | `201 Created` | ✅ |
-| `POST /api/tasks` (no title) | `400 Bad Request` | `400 Bad Request` | ✅ |
-| `POST /api/tasks` (title > 100) | `400 Bad Request` | `400 Bad Request` | ✅ |
-| `POST /api/tasks` (desc > 500) | `400 Bad Request` | `400 Bad Request` | ✅ |
-| `POST /api/tasks` (no status) | `201` + status = TODO | `201` + status = TODO | ✅ |
-| `PUT /api/tasks/{id}` | `200 OK` with updated fields | `200 OK` with updated fields | ✅ |
-| `PUT /api/tasks/{invalid}` | `404 Not Found` | `404 Not Found` | ✅ |
-| `DELETE /api/tasks/{id}` | `204 No Content` | `204 No Content` | ✅ |
-| `DELETE /api/tasks/{invalid}` | `404 Not Found` | `404 Not Found` | ✅ |
-| CORS headers | Present on `/api/**` | Present | ✅ |
-| H2 Database | In-memory, resets on restart | Confirmed | ✅ |
+| PostgreSQL driver | `org.postgresql:postgresql` (runtime) | Present, `${postgresql.version}` (42.2.27) | PASS |
+| H2 kept for tests | scope `test` | Correct | PASS |
+| `api-models` dependency | `com.taskmanager:api-models:${project.version}` | Present | PASS |
+
+### 1.2 `backend/application.properties`
+
+| Property | Value | Status |
+| :--- | :--- | :--- |
+| `spring.datasource.url` | `${DB_URL:jdbc:postgresql://localhost:5436/taskdb}` | PASS (env-configurable) |
+| `spring.datasource.username` | `${DB_USERNAME:taskuser}` | PASS |
+| `spring.datasource.password` | `${DB_PASSWORD:taskpass}` | PASS |
+| Hibernate dialect | `PostgreSQLDialect` | PASS |
+| `ddl-auto` | `update` | PASS |
+| CORS | `${APP_CORS_ALLOWED_ORIGINS:...}` via `@Value` injection | PASS |
+| H2 console | Removed | PASS |
+
+### 1.3 Test Configuration (`src/test/resources/application.properties`)
+- H2 in-memory (`jdbc:h2:mem:testdb`), `ddl-auto=create-drop`. PASS.
+- 14/14 tests pass using H2. PASS.
+
+### 1.4 `CorsConfig.java`
+- Origins injected via `@Value("${app.cors.allowed-origins:...}")` with constructor injection. PASS.
+
+---
+
+## Part 2: Shared `api-models` Module
+
+### 2.1 `api-models/pom.xml`
+- Packaging: `jar`. Dependencies: `spring-boot-starter-data-jpa`, `spring-boot-starter-validation`. PASS.
+
+### 2.2 `Task.java`
+- Constants: `TITLE_MAX_LENGTH = 100`, `DESCRIPTION_MAX_LENGTH = 500` — used in `@Size` and `@Column`. PASS — single source of truth.
+- Package: `com.taskmanager.model` — auto-scanned by backend (`com.taskmanager` base), explicitly scanned by MCP via `@EntityScan`. PASS.
+- `@Table(name = "tasks")`, `@GeneratedValue(IDENTITY)`, `@Enumerated(STRING)` — PostgreSQL-compatible. PASS.
+- Default constructor sets `status = TODO`. Convenience constructor handles null status. PASS.
+
+### 2.3 `TaskStatus.java`
+- Enum: `TODO`, `IN_PROGRESS`, `DONE`. PASS.
+
+### 2.4 `TaskRepository.java`
+- `JpaRepository<Task, Long>` with `countByStatus(TaskStatus)` derived query. PASS.
+
+---
+
+## Part 3: MCP Server
+
+### 3.1 `mcp-server/pom.xml`
+- Parent: `task-manager-parent`. PASS.
+- Dependencies: `api-models`, `spring-ai-starter-mcp-server-webmvc` (`${spring-ai.version}` = `1.1.0-M2`), `spring-boot-starter-data-jpa`, `postgresql`. PASS.
+- Explicit Maven Central repo declaration (workaround for corporate Artifactory). PASS.
+
+### 3.2 `McpServerApplication.java`
+- `@SpringBootApplication` + `@EntityScan("com.taskmanager.model")` + `@EnableJpaRepositories("com.taskmanager.repository")`. PASS — required since base package is `com.taskmanager.mcp`.
+
+### 3.3 `application.properties`
+- Port: `8081`. Same DB config as backend (env-configurable). MCP metadata: `task-manager-mcp` v1.0.0. PASS.
+
+### 3.4 MCP Tools (`TaskMcpTools.java`)
+
+**Annotation usage**: Current implementation uses `@McpTool`/`@McpToolParam` from `org.springaicommunity.mcp.annotation` and compiles/tests successfully in the current project setup.
+
+#### `mcp-help`
+- `@McpTool(name = "mcp-help", ...)` — Returns Map with module name and all 4 tool descriptions. PASS.
+
+#### `mcp-schema-tasks`
+- `@McpTool(name = "mcp-schema-tasks", ...)` — Returns JSON-Schema using `Task.TITLE_MAX_LENGTH` / `DESCRIPTION_MAX_LENGTH` constants. PASS.
+- Required fields: `["title", "status"]`. Enum values for status. `dueDate` as format `date`. PASS.
+
+#### `mcp-tasks` (Bulk Insert)
+- `@McpTool(name = "mcp-tasks", ...)` + `@Transactional` — Accepts `List<TaskInput>` via `@McpToolParam`. PASS.
+- Validation: null task, blank title, title > MAX, description > MAX, invalid status enum. PASS.
+- Partial insert: valid tasks saved, invalid tasks collected as errors. PASS.
+- `parseStatus()` uses `Locale.ROOT` for `toUpperCase()` — locale-safe. PASS.
+- Response: `received`, `inserted`, `rejected`, `totalInDatabase`, `errors`. PASS.
+
+#### `mcp-tasks-summary`
+- `@McpTool(name = "mcp-tasks-summary", ...)` — Returns `TaskSummary` with total and per-status counts. PASS.
+
+### 3.5 DTOs
+- `TaskInput`: POJO — `title`, `description`, `status` (String), `dueDate` (LocalDate). PASS.
+- `TaskSummary`: `total` (long), `byStatus` (Map<String, Long>), default constructor. PASS.
+
+### 3.6 MCP Unit Tests (`TaskMcpToolsTest.java`) — 8/8 PASS
+
+| Test | What it verifies | Status |
+| :--- | :--- | :--- |
+| `help_returnsAllToolDescriptions` | `mcp-help` returns all 4 tool names | PASS |
+| `schemaTasks_returnsExpectedSchemaShape` | Schema includes all fields, correct maxLengths and enum values | PASS |
+| `insertTasks_withSingleTask_insertsAndReturnsCounts` | Valid task is saved with correct fields, counts are accurate | PASS |
+| `insertTasks_withoutStatus_defaultsToTodo` | Null status defaults to `TaskStatus.TODO` | PASS |
+| `insertTasks_withTenTasks_insertsAll` | Batch insert path saves all 10 tasks and returns counts | PASS |
+| `insertTasks_withInvalidTask_rejectsAndDoesNotSave` | Blank title rejected, `saveAll()` never called, error reported | PASS |
+| `tasksSummary_returnsCountsFromRepository` | Summary returns correct total and per-status counts | PASS |
+| `tasksSummary_emptyDatabase_returnsZeroCounts` | Empty DB summary returns zeros for total and all statuses | PASS |
+
+Test framework: JUnit 5 + Mockito (inline mock maker). Tests use `ArgumentCaptor` to verify saved entity values.
+
+
+## Part 5: Success Criteria (from request-ext.txt)
+
+| # | Criterion | Evidence | Status |
+| :--- | :--- | :--- | :--- |
+| 1 | MCP Server running + respects spec 2025-06-18 | SSE endpoint + MCP integration tests; protocol version asserted via `McpSchema.LATEST_PROTOCOL_VERSION` and handshake test (when enabled) | PASS (with conditional protocol test) |
+| 2 | Schema inspection via `mcp-schema-tasks` | `schemaTasks()` explicitly tested and protocol call path exists in handshake integration test | PASS |
+| 3 | AI agent inserts 1000 records via `mcp-tasks` | Insert logic and batch behavior tested (1 task, 10 tasks, protocol batch flow), but no automated 1000-task test evidence committed | PARTIAL |
+| 4 | Summary reflects inserted data | Unit summary tests + protocol summary call after insert | PASS |
+| 5 | All actions documented | Pending: README.md / AI-USAGE.md log of the actual agent workflow (Prompts & Output) | PENDING |
+
+Note: MCP protocol handshake/discovery tests are gated behind `-Dmcp.handshake.test=true`. Default test runs verify unit coverage and basic integration, but do not automatically enforce full protocol criteria.
+
+---
+
+## Part 6: Fundamental Success Criteria (from request.txt)
+
+| # | Criterion | Evidence | Status |
+| :--- | :--- | :--- | :--- |
+| 1 | App runs successfully and supports all CRUD features | Backend `TaskController` provides full REST CRUD. React frontend provides listing, adding, editing, and deleting tasks. Tested and working. | PASS |
+| 2 | Use of AI tools is clearly documented | `AI-USAGE.md` details every phase from requirements extraction to build fixes, listing tools used (Gemini, Claude, GPT) and their purpose. | PASS |
+| 3 | Code is structured and understandable | Enterprise multi-module Maven structure (`backend`, `frontend`, `api-models`, `mcp-server`), clean separation of concerns, DRY principles followed. | PASS |
+| 4 | Technical requirements are met | Java 17+, Spring Boot, PostgreSQL/H2, Vite React TS frontend, Maven, REST APIs with `@Valid` constraints (100/500 char limits, enum status). | PASS |
+| 5 | AI usage is reflected upon critically | `AI-USAGE.md` contains a "Critical Reflection on AI Usage" section discussing what worked well, challenges, and lessons learned. | PASS |
+
+---
+
+## Issues Found & Resolved
+
+| # | Issue | Resolution | Who |
+| :--- | :--- | :--- | :--- |
+| 1 | Annotation/API compatibility for MCP tools | Current working implementation stays on `@McpTool`/`@McpToolParam` (community package) for this codebase | User |
+| 2 | Maven Artifactory corrupting Spring AI JARs | Fixed `settings.xml`, added explicit Maven Central repo in POM | User + Agent |
+| 3 | Hardcoded magic numbers (100, 500) | Refactored to `Task.TITLE_MAX_LENGTH`, `Task.DESCRIPTION_MAX_LENGTH` | User |
+| 4 | Hardcoded DB credentials | Changed to env-variable with defaults: `${DB_URL:...}` | User |
+| 5 | Hardcoded CORS origins | Injected via `@Value("${app.cors.allowed-origins:...}")` | User |
+| 6 | `toUpperCase()` without locale | Changed to `toUpperCase(Locale.ROOT)` | User |
 
 ---
 
 ## Overall Verdict
 
-**Code Review: PASS** (2 minor observations, no blockers)
-**Acceptance Tests: ALL PASSED** (13/13 API tests, 8/8 E2E tests)
-
-The application fulfills all functional requirements, bonus features, and success criteria defined in `request.txt`.
+- **Backend Migration**: PASS ✅ (14/14 tests, correct PostgreSQL config)
+- **api-models Module**: PASS ✅ (compiles and installs, shared entity/repo)
+- **MCP Server Code**: PASS ✅ (all 4 tools correct, 8/8 MCP unit tests pass, integration tests pass)
+- **Frontend**: PASS ✅ (cleaner error handling, env-configurable proxy)
+- **Total Tests**: 26/26 (14 backend + 12 mcp-server default tests)
+- **Fundamental Criteria (request.txt)**: PASS ✅ (All 5 criteria met).
+- **Advanced MCP Criteria (request-ext.txt)**: Criterion 2 and 4 PASS ✅, Criterion 1 PASS with conditional protocol handshake test, Criterion 3 PARTIAL (no automated 1000-task proof), Criterion 5 PENDING ⏳.
