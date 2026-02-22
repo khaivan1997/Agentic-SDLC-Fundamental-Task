@@ -1,0 +1,50 @@
+# Task Manager Web Application - Architecture & Deployment Guide
+
+## 1. Technologies & Versions
+- **Backend Framework**: Spring Boot 3.4.3 (Java 17)
+- **Frontend Library**: React 18.3 (with TypeScript)
+- **Frontend Build Tool**: Vite 6.2
+- **Styling**: TailwindCSS 4.0
+- **Database**: H2 (In-Memory Database)
+- **Build Server**: Maven 3.x
+- **HTTP Client**: Axios
+
+## 2. Multi-Module Project Structure
+To streamline the build process and package everything into a single deployable artifact, the project should be structured as a Maven Multi-Module project. 
+
+The structure will look like this:
+
+```
+Agentic SDLC Fundamental Task/
+├── pom.xml (Root Parent POM)
+├── frontend/
+│   ├── pom.xml (Frontend Module POM using frontend-maven-plugin)
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── src/
+└── backend/
+    ├── pom.xml (Backend Module POM)
+    └── src/
+```
+
+### Purpose of Each Module:
+1. **Root POM**: Aggregates the `frontend` and `backend` modules and defines common properties (like Java version).
+2. **Frontend Module**: Uses the `frontend-maven-plugin` plugin to install Node/npm, install dependencies (`npm install`), and build the React Vite application (`npm run build`).
+3. **Backend Module**: Contains the Spring Boot application. It depends on the `frontend` module to ensure the frontend builds first. The `maven-resources-plugin` copies the Vite build output (from `frontend/dist`) into `backend/target/classes/static/` before the backend JAR/WAR is packaged.
+
+## 3. Deployment Strategy (Single WAR/JAR with Frontend Included)
+When deploying the application, instead of hosting the frontend and backend separately, the frontend assets will be served directly by the embedded Tomcat server within Spring Boot. 
+
+### How it works:
+1. Running `mvn clean install` from the root directory triggers the build.
+2. The `frontend` module executes `npm run build`, generating static HTML/JS/CSS files in `frontend/dist`.
+3. The `backend` module copies those generated static files into its `src/main/resources/static` directory (or directly into the `target/classes/static` folder) during the `generate-resources` phase.
+4. Spring Boot compiles its Java code and packages everything (including the static frontend files) into a single `.jar` or `.war` file.
+5. You deploy this single artifact to your server (e.g., executing `java -jar backend.war` or deploying the `.war` to an external Tomcat/WebLogic server).
+6. When a user visits the root context (`/`), Spring Boot automatically serves the React `index.html` from the `static` folder.
+
+To deploy as a WAR file specifically (if deploying to an external servlet container):
+- Update the backend's packing method in `<packaging>war</packaging>`.
+- Make the `BackendApplication` extend `SpringBootServletInitializer`.
+- Mark `spring-boot-starter-tomcat` as `provided` scope in the dependencies.
+- The resulting `.war` file can be dropped into the `webapps/` folder of any standard Servlet Container.

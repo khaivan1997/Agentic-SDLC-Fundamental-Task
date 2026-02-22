@@ -1,0 +1,47 @@
+# Backend Testing Strategy & Criteria
+
+## Overview
+This document outlines the testing strategy for the Spring Boot backend (`com.taskmanager.backend`). The testing approach will focus on unit testing core business logic and integration testing the API endpoints with the H2 database.
+
+## 1. Unit Testing Strategy
+
+### Target: `TaskService.java`
+**Frameworks**: JUnit 5, Mockito
+
+**Criteria**:
+- **Mocking**: The `TaskRepository` must be mocked to isolate service logic from the database.
+- **Test Cases**:
+    - **Get All Tasks**: Verify it returns a list of tasks.
+    - **Get Task By ID (Found)**: Verify it returns the correct task when a valid ID is provided.
+    - **Get Task By ID (Not Found)**: Verify it throws `ResourceNotFoundException` when an invalid ID is requested.
+    - **Create Task**: Verify it saves and returns the new task.
+    - **Update Task (Found)**: Verify it updates the task properties and saves it.
+    - **Update Task (Not Found)**: Verify it throws `ResourceNotFoundException`.
+    - **Delete Task (Found)**: Verify `deleteById` is called.
+    - **Delete Task (Not Found)**: Verify it throws `ResourceNotFoundException`.
+
+## 2. Integration Testing Strategy
+
+### Target: `TaskController.java`
+**Frameworks**: Spring Boot Test (`@SpringBootTest`), MockMvc, TestRestTemplate (optional, but MockMvc preferred for speed), JUnit 5
+
+**Criteria**:
+- **Database Context**: Tests will load the full Spring Application Context and connect to an actual, isolated in-memory H2 test database.
+- **State Management**: The database should be cleared or reset between test executions (e.g., using `@DataJpaTest` or `@Transactional` rollback).
+- **Test Cases**:
+    - **Create Task (Valid)**: Send a `POST` request with valid JSON. Verify `201 Created` status and the returned JSON structure.
+    - **Create Task (Invalid)**: Send a `POST` request with an empty title. Verify `400 Bad Request`.
+    - **Get All Tasks**: Send a `GET` request. Verify `200 OK` and a JSON array.
+    - **Get Task by ID**: Send a `GET` request. Verify `200 OK` and the correct JSON object.
+    - **Update Task**: Send a `PUT` request with modified JSON. Verify `200 OK` and the updated fields in the response.
+    - **Delete Task**: Send a `DELETE` request. Verify `204 No Content`. Verify a subsequent `GET` for the ID returns `404 Not Found`.
+
+## 3. Technology Stack for Testing
+- **JUnit 5 (Jupiter)**: The primary testing framework.
+- **Mockito**: For creating mocks and stubs in unit tests.
+- **Spring Test / MockMvc**: For testing Spring MVC controllers.
+- **AssertJ / Hamcrest**: For fluent and readable assertions.
+
+## 4. Execution
+Tests will be executed standardly using the Maven Surefire Plugin via the command:
+`./mvnw clean test` (or `mvn clean test` from the root project).

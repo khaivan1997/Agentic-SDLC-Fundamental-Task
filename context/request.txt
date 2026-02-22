@@ -1,0 +1,97 @@
+  
+  
+ Copyright © 2026  Accenture. All rights reserved. 
+Agentic SDLC Fundamental Task 
+ 
+You must build a simple full-stack web application using the support of an agentic AI tool. The 
+focus is on both the technical solution and the collaborative development process with the AI. 
+ 
+📦 Project Description 
+Project: "Task Manager" Web App 
+Create a web application that allows users to manage tasks. The app should support basic CRUD 
+operations: Create, Read, Update, and Delete.  
+ 
+🔧 Tech Stack 
+• Frontend: React.js (with TypeScript preferred), optional: Material UI or TailwindCSS 
+• Backend: Spring Boot (Java 17+) 
+• Database: In-Memory (H2) or PostgreSQL (optional) 
+• Build Tools: 
+o Frontend: Vite or Create React App 
+o Backend: Maven or Gradle 
+• Communication: REST API with JSON 
+ 
+ 
+
+  
+  
+ Copyright © 2026  Accenture. All rights reserved. 
+💡 Detailed Requirements 
+Entity: Task 
+Task { 
+  id: number (auto-generated) 
+  title: string (required, max 100 characters) 
+  description: string (optional, max 500 characters) 
+  status: enum ["TODO", "IN_PROGRESS", "DONE"] 
+  dueDate: date (optional) 
+} 
+ 
+🔁 Functional Requirements 
+Frontend 
+• A home page that lists all tasks. 
+• A form to add a new task. 
+• Options to edit and delete existing tasks. 
+• Status should be changeable via dropdown. 
+• Optional: Sort tasks by status or due date. 
+• Form validations (e.g., required fields, character limits). 
+• Display error messages on server/API failures. 
+Backend 
+• Expose a REST API with the following endpoints: 
+o GET /api/tasks – Retrieve all tasks 
+o GET /api/tasks/{id} – Retrieve a task by ID 
+o POST /api/tasks – Create a new task 
+o PUT /api/tasks/{id} – Update a task 
+o DELETE /api/tasks/{id} – Delete a task 
+• Validate input using Bean Validation (e.g., @NotBlank, @Size) 
+• Store data in an H2 database (or PostgreSQL) 
+• Enable CORS to allow frontend-backend communication 
+ 
+
+  
+  
+ Copyright © 2026  Accenture. All rights reserved. 
+🤖 Agentic AI Involvement 
+ 
+🧪 Development Approach 
+1. Use the AI to help throughout the complete development phase:  
+o Generating code 
+o Debugging issues 
+o Designing APIs 
+o Refactoring 
+o Prompting architecture decisions 
+o Write Testcases 
+o Document the project 
+ 
+🚀 Bonus / Optional Features 
+• Group tasks into categories 
+• Add search/filter functionality 
+• Deploy the frontend to Vercel or Netlify 
+• Deploy the backend to Render, Fly.io or similar 
+ 
+📅 Timeline & Deliverables 
+• Duration: 1–2 working days 
+• Deliverables: 
+o Link to git repository 
+ 
+✅ Success Criteria 
+• The app runs successfully and supports all CRUD features. 
+• The use of AI tools is clearly documented. 
+• The code is structured and understandable. 
+• Technical requirements are met. 
+• AI usage is reflected upon critically and constructively. 
+ 
+ 
+
+  
+  
+ Copyright © 2026  Accenture. All rights reserved. 
+ 
