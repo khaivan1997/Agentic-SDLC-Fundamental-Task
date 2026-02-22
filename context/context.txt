@@ -1,0 +1,29 @@
+# AI Tools Usage Documentation
+
+This project ("Agentic SDLC Fundamental Task") was built from the ground up using a collaborative agentic AI workflow. 
+
+## Development Process Details
+
+The AI was heavily involved in the following phases, fulfilling the stated development approach requirements:
+
+1. **Architecture & Planning**
+   * Generated initial `context/backend.txt` and `context/frontend.txt` planning documents based solely on the provided requirements (`request.txt`).
+   * Recommended and executed a Maven Multi-Module setup (`task-manager-parent`) to package the React frontend inside the Spring Boot WAR file.
+
+2. **Code Generation & Scaffolding**
+   * Generated the Spring Boot project structure, configuration files (`application.properties`), and CORS settings.
+   * Created the JPA Entity (`Task`), Enum (`TaskStatus`), Repository (`TaskRepository`), Service (`TaskService`), and REST Controller (`TaskController`).
+   * Bootstrapped the React Vite frontend, generated TypeScript interfaces, Axios API integration services, and all primary UI components (`TaskCard.tsx`, `TaskForm.tsx`, `TaskList.tsx`).
+
+3. **Debugging Issues**
+   * Diagnosed and fixed TypeScript compiler errors related to literal enum types.
+   * Diagnosed Maven Dependency resolution errors caused by a proxy, providing and applying a custom `empty-settings.xml` override to bypass caching issues.
+   * Solved port conflicts (`Port 8080 was already in use`) by killing rogue background processes during deployment verification.
+
+4. **Testing & Verification**
+   * Outlined the comprehensive backend testing strategy in `context/backend-test.txt`, mapping functional requirements directly to Integration Test plans.
+   * Utilized an autonomous isolated Browser Subagent to perform end-to-end (E2E) testing on the deployed application, interacting with the UI directly to verify the CRUD flow on Port 8080.
+
+5. **CI/CD & Repository Management**
+   * Created necessary `.gitignore` parameters.
+   * Initialized the Git repository, managed commits based on user commands, added the upstream URL, and pushed the `main` branch directly to GitHub.
