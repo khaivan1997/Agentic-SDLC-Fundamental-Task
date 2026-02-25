@@ -1,3 +1,27 @@
+# Build outputs
+**/target/
 
-/frontend/node_modules/
-/backend/target/
+# Node
+**/node_modules/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven wrapper (if not needed in repo)
+!.mvn/wrapper/maven-wrapper.jar
+
+# Env files
+.env
+.env.local
+
+# Context folder (per user rule)
+context/
