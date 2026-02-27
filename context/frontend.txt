@@ -1,0 +1,48 @@
+# Frontend Implementation Plan
+
+## Overview
+The frontend is a Single Page Application (SPA) built with React and TypeScript, functioning as the user interface for the Task Manager.
+
+## Technologies
+- **Library**: React 18+
+- **Language**: TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS for responsive and modern UI components
+- **HTTP Client**: Axios for communicating with the Spring Boot backend API
+
+## Core Features & UI Components
+
+### 1. Dashboard View
+- A central view that displays all existing tasks fetched from the backend.
+- Tasks are visually separated into distinct sections or columns based on their current status: "To Do", "In Progress", and "Done" (fulfilling the 'group tasks into categories' bonus requirement).
+- **Search & Filter**: Includes a search bar to filter tasks by title/description, fulfilling the optional search/filter requirement.
+- **Sorting**: A dropdown allows sorting tasks by created order, status, or due date (fulfills optional requirement from request.txt).
+
+### 2. Task Card (`TaskCard.tsx`)
+- Displays individual task details: Title, Description, Status, and Due Date.
+- Includes action buttons:
+  - **Edit**: Opens the editing form for this task.
+  - **Delete**: Prompts for confirmation and deletes the task.
+  - **Status Dropdown**: Allows quickly moving a task between states (Todo -> In Progress -> Done).
+
+### 3. Task Form (`TaskForm.tsx`)
+- A unified form used for both **Creating** new tasks and **Editing** existing ones.
+- **Fields**:
+  - Title (Text input, Required)
+  - Description (Textarea, Optional)
+  - Status (Dropdown)
+  - Due Date (Date picker, Optional)
+- **Validation**:
+  - Client-side validation to ensure the title is filled before submission.
+  - Character limit enforcement (100 for title, 500 for description).
+  - Loading states while saving to prevent double submissions.
+  - **Error Display**: Displays server-side validation errors (e.g., field-level errors from Bean Validation) and generic API failure messages to the user.
+
+### 4. API Integration (`api.ts`)
+- A centralized Axios client with a configurable base URL (`VITE_API_BASE_URL` env variable, defaults to `/api/tasks` for WAR deployment).
+- Handles response parsing and error catching.
+
+## Styling Approach
+- Clean, minimalist, and responsive design using Tailwind CSS utility classes.
+- Status indicators (e.g., colors or badges) to easily distinguish between task states.
+- Hover effects and transitions for interactive elements to improve user experience.

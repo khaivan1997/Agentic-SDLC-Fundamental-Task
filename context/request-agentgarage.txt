@@ -1,0 +1,69 @@
+ 
+ 
+Copyright © 2025 Accenture. All rights reserved. 
+AgentGarage Training Exercise: LLM 
+Workflow with N8N 
+ 
+🎯 Objective 
+In this exercise, you'll set up and explore AgentGarage – a lightweight GenAI development 
+environment based on Docker, featuring: 
+• A local LLM (connected via OpenWebUI or direct API) 
+• N8N for workflow orchestration 
+• A simple workspace for experimenting with SDLC-related automations 
+The goal: build a simple use case from the Software Development Lifecycle (SDLC) domain, 
+where N8N interacts with the local LLM.  
+ 
+🧰 Tech Stack 
+• Local LLM (e.g., Ollama, LM Studio, Mistral, etc.) 
+• OpenWebUI (or direct LLM API access) 
+• N8N (workflow automation) 
+• Docker Compose (for local setup) 
+ 
+🧪 Exercise Task 
+1. Clone and start the AgentGarage environment using docker-compose. 
+2. Access N8N and the local LLM via browser and verify the setup. 
+3. Build a simple N8N workflow that communicates with the LLM API.  
+4. Choose your own small use case within the SDLC context. 
+ 
+✅ Requirements 
+• The N8N workflow must include at least one API request to the local LLM. 
+• The input/output flow must be traceable (e.g., via Webhook, File Input, Email, etc.). 
+• You are responsible for prompt design (i.e., how N8N "talks" to the LLM). 
+• Keep it simple, focused, and creative. 
+ 
+
+ 
+ 
+Copyright © 2025 Accenture. All rights reserved. 
+💡 Example Use Cases (for inspiration only)  
+1. Pull Request Description Generator 
+A workflow takes a commit message or changelog fragment, sends it to the LLM, and receives 
+a clean, human-friendly pull request description. 
+ 
+2. Code Review Suggestions 
+A workflow receives a code snippet or diff from a pull request and uses the LLM to generate 
+review comments or a code quality summary. 
+Example output: 
+“Looks good overall. Consider simplifying the nested loop in line 14. No test coverage found 
+for the new function.” 
+ 
+3. User Story to Acceptance Criteria (Gherkin Format) 
+The workflow accepts a user story (in plain text), passes it to the LLM, and receives a 
+structured list of acceptance criteria. 
+Input: 
+"As a user, I want to change my password so I can secure my account." 
+Output: 
+gherkin 
+Given the user is logged in   
+When the user navigates to the account settings and submits a new 
+password   
+Then the password should be updated and a confirmation message 
+displayed   
+ 
+🧠 Learning Goals 
+• Get hands-on experience with Docker-based LLM environments 
+• Understand API integration between N8N and a local language model 
+• Apply prompt engineering to real SDLC workflows 
+• Explore automation ideas within your daily development lifecycle 
+ 
+ 

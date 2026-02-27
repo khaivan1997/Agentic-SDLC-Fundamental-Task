@@ -1,0 +1,55 @@
+# Backend Testing Strategy & Criteria
+
+## Overview
+This document outlines the testing strategy for the Spring Boot backend (`com.taskmanager.backend`). The testing approach will focus on unit testing core business logic and integration testing the API endpoints with the H2 database.
+
+## 1. Unit Testing Strategy
+
+### Target: `TaskService.java`
+**Frameworks**: JUnit 5, Mockito
+
+**Criteria**:
+- **Mocking**: The `TaskRepository` must be mocked to isolate service logic from the database.
+- **Test Cases**:
+    - **Get All Tasks**: Verify it returns a list of tasks.
+    - **Get Task By ID (Found)**: Verify it returns the correct task when a valid ID is provided.
+    - **Get Task By ID (Not Found)**: Verify it throws `ResourceNotFoundException` when an invalid ID is requested.
+    - **Create Task**: Verify it saves and returns the new task.
+    - **Create Task (Default Status)**: Verify that when no status is provided, the task defaults to "TODO".
+    - **Update Task (Found)**: Verify it updates the task properties and saves it.
+    - **Update Task (Not Found)**: Verify it throws `ResourceNotFoundException`.
+    - **Delete Task (Found)**: Verify `deleteById` is called.
+    - **Delete Task (Not Found)**: Verify it throws `ResourceNotFoundException`.
+
+## 2. Integration Testing Strategy
+
+### Target: `TaskController.java`
+**Frameworks**: Spring Boot Test (`@SpringBootTest`), MockMvc, TestRestTemplate (optional, but MockMvc preferred for speed), JUnit 5
+
+**Criteria**:
+- **Database Context**: Tests will load the full Spring Application Context and connect to an actual, isolated in-memory H2 test database.
+- **State Management**: The database should be cleared or reset between test executions (e.g., using `@DataJpaTest` or `@Transactional` rollback).
+- **Test Cases**:
+    - **Create Task (Valid)**: Send a `POST` request to `/api/tasks` with valid JSON containing a title (max 100 chars), optional description (max 500 chars), status ("TODO", "IN_PROGRESS", or "DONE"), and optional dueDate. Verify `201 Created` status and the returned JSON structure.
+    - **Create Task (Default Status)**: Send a `POST` request to `/api/tasks` without a `status` field. Verify `201 Created` and that the returned task has status "TODO".
+    - **Create Task (Invalid - Missing Title)**: Send a `POST` request to `/api/tasks` with an empty title. Verify `400 Bad Request` per `@NotBlank` validation rules.
+    - **Create Task (Invalid - Title Too Long)**: Send a `POST` request to `/api/tasks` with a title exceeding 100 characters. Verify `400 Bad Request` per `@Size` validation rules.
+    - **Create Task (Invalid - Description Too Long)**: Send a `POST` request to `/api/tasks` with a description exceeding 500 characters. Verify `400 Bad Request` per `@Size` validation rules.
+    - **Get All Tasks**: Send a `GET` request to `/api/tasks`. Verify `200 OK` and a JSON array representing all retrieved tasks.
+    - **Get Task by ID**: Send a `GET` request to `/api/tasks/{id}`. Verify `200 OK` and the correct JSON object.
+    - **Get Task by ID (Not Found)**: Send a `GET` request to `/api/tasks/{invalid_id}`. Verify `404 Not Found` response.
+    - **Update Task**: Send a `PUT` request to `/api/tasks/{id}` with modified JSON. Verify `200 OK` and that the updated fields are reflected in the response.
+    - **Update Task (Not Found)**: Send a `PUT` request to `/api/tasks/{invalid_id}`. Verify `404 Not Found`.
+    - **Delete Task**: Send a `DELETE` request to `/api/tasks/{id}`. Verify `204 No Content`. Verify a subsequent `GET` for the ID returns `404 Not Found`.
+    - **Delete Task (Not Found)**: Send a `DELETE` request to `/api/tasks/{invalid_id}`. Verify `404 Not Found`.
+    - **CORS Verification**: Send an `OPTIONS` request to `/api/tasks` from a simulated frontend origin. Verify the server responds with appropriate CORS headers (`Access-Control-Allow-Origin`, etc.) to ensure frontend-backend communication.
+
+## 3. Technology Stack for Testing
+- **JUnit 5 (Jupiter)**: The primary testing framework.
+- **Mockito**: For creating mocks and stubs in unit tests.
+- **Spring Test / MockMvc**: For testing Spring MVC controllers.
+- **AssertJ / Hamcrest**: For fluent and readable assertions.
+
+## 4. Execution
+Tests will be executed standardly using the Maven Surefire Plugin via the command:
+`./mvnw clean test` (or `mvn clean test` from the root project).

@@ -23,6 +23,3 @@ Thumbs.db
 # Env files
 .env
 .env.local
-
-# Context folder (per user rule)
-context/
