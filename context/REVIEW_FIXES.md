@@ -1,111 +1,91 @@
-# REVIEW.md - Fixed Issues Summary
+# REVIEW.md — Fix Tracker
 
-**Review Date:** 2026-02-25  
-**Status Update:** Checking what has been addressed
+**Original Review:** 2026-02-25  
+**Last Checked:** 2026-02-27  
 
----
-
-## ✅ FIXED ISSUES
-
-### 1. **Project-Level README.md** ✅ FIXED
-- **Original Issue:** ❌ No project-level `README.md` exists
-- **Status:** ✅ **FIXED** — Root level `README.md` now exists with:
-  - Architecture diagram overview
-  - Tech stack details
-  - Prerequisites (Java 17+, Node.js 20+, Docker, Maven)
-  - Getting Started instructions (Docker setup, build, run backend/frontend/MCP)
-  - REST API endpoints reference
-  - Task Entity definition
-
-**Grade Improvement:** Documentation D → **B** (still needs more details on testing & deployment)
+Tracks only the issues flagged in `REVIEW.md`.
 
 ---
 
-### 2. **New MCP Server Module Added** ✅ ADDED
-- **New Feature:** `mcp-server` module added to the architecture
-- **Purpose:** Spring AI MCP Server for AI agent integration
-- **Status:** ✅ **IMPLEMENTED & BUILDS**
-  - Compiles successfully (`mvn clean install` passes all 5 modules)
-  - Registers tools via `@McpTool` annotations
-  - Runs on port 8081 with SSE endpoint `/sse`
-  - Includes integration tests
+## ✅ FIXED
 
-**Grade Improvement:** Architecture now includes AI integration layer (**A**)
+### 1. No project-level README.md (L70–77) ✅
+- **Issue:** No README; developer cannot run the project without prior knowledge.
+- **Fix:** Root `README.md` created with prerequisites, build/run instructions, API reference, environment variables, and test commands.
 
----
+### 2. frontend/README.md is default Vite template (L71) ✅
+- **Issue:** Only README was the unmodified Vite scaffold.
+- **Fix:** Root `README.md` now serves as the single project doc. Vite README remains but is no longer the only one.
 
-## ⚠️ NOT YET FIXED
+### 3. `react-router-dom` unused (L101) ✅
+- **Fix:** Removed from `package.json` entirely.
 
-### 3. **Frontend Tests** ❌ STILL MISSING
-- **Issue:** Zero frontend tests (no `.test.tsx`, `.spec.ts` files)
-- **Status:** ❌ **NOT FIXED** — Still no frontend tests exist
-- **Impact:** All frontend CRUD, form validation, API error handling remain untested
+### 4. `axios` in `devDependencies` (L102) ✅
+- **Fix:** Moved to `dependencies` (`"axios": "^1.13.5"`).
 
-**Recommendation:** Implement 15-25 tests using Vitest + React Testing Library
+### 5. Zero frontend tests (L52–60) ✅
+- **Issue:** 0 frontend tests; recommended 15–25 using Vitest + RTL.
+- **Current:** 16 tests in `TaskList.test.tsx`:
 
----
+| Area | Covered Scenarios |
+|---|---|
+| Basic rendering | Fetch + grouped columns |
+| Search/filter | Keyword filtering + no-match state |
+| Create flow | Happy path + API field error handling |
+| Form validation | Required title, title length, description length |
+| Edit flow | Enter edit mode, save update, cancel edit |
+| Status flow | Status dropdown update + API call |
+| Delete flow | Confirmed delete, cancelled delete, delete API failure |
+| States/sorting | Fetch failure state, empty state, sort by due date |
 
-### 4. **Unused Dependencies** ⚠️ NOT FIXED
-- **Issue 1:** `react-router-dom` listed but not used
-- **Issue 2:** `axios` in `devDependencies` instead of `dependencies`
-- **Status:** ❌ **NOT FIXED** — Still present in frontend `package.json`
-
-**Recommendation:** Remove unused router, move axios to dependencies
-
----
-
-### 5. **Backend Configuration Warnings** ⚠️ MINOR ONLY
-- **Issue 1:** `spring.jpa.open-in-view` not explicitly set (generates warning)
-- **Issue 2:** H2 console enabled in production config
-- **Status:** ⚠️ **LOW PRIORITY** — Works but not production-ready
-- **Impact:** Startup warnings, security consideration
-
-**Recommendation:** Add `spring.jpa.open-in-view=false` to `application.properties`
+- **Infrastructure:** Vitest 4.0 + React Testing Library + jsdom fully configured.
+- **Status:** ✅ Fixed (test depth now in recommended range).
 
 ---
 
-### 6. **Service-Layer Unit Tests** ❌ STILL MISSING
-- **Issue:** Only integration tests, no dedicated `TaskServiceTest` with mocked repositories
-- **Status:** ❌ **NOT FIXED** — Backend tests remain integration-only
-- **Current:** 14 comprehensive integration tests (✅ pass)
-- **Missing:** Unit tests for `TaskService` in isolation
+## ✅ VERIFIED STATUS
 
-**Recommendation:** Add `TaskServiceTest.java` with Mockito mocks
+### 6. `spring.jpa.open-in-view` warning (L121) ✅
+- **Issue:** Not explicitly set, causes startup WARN log.
+- **Fix:** Added `spring.jpa.open-in-view=false` in:
+  - `backend/src/main/resources/application.properties`
+  - `backend/src/test/resources/application.properties`
+- **Status:** ✅ Fixed.
 
----
+### 7. H2 console enabled (L122)
+- **Issue:** `spring.h2.console.enabled=true` — security concern for production.
+- **Status:** ⚠️ Removed from production `application.properties` (PostgreSQL migration). Still present in test config, which is correct.
 
-## 📊 UPDATED GRADING
+### 8. No service-layer unit tests (L49) ✅
+- **Issue:** Only integration tests; no `TaskServiceTest` with mocked repository.
+- **Fix:** Added `backend/src/test/java/com/taskmanager/service/TaskServiceTest.java` (Mockito + JUnit 5) covering:
+  - `getAllTasks` returns repository data
+  - `getTaskById` throws `ResourceNotFoundException` when missing
+  - `createTask` defaults null status to `TODO`
+  - `updateTask` applies updates and defaults null status to `TODO`
+  - `deleteTask` resolves by id and calls repository delete
+- **Status:** ✅ Fixed.
 
-| Area | Original | Now | Changed? |
-|------|----------|-----|----------|
-| **Architecture** | A | A+ | ✅ MCP Server added |
-| **Testing** | C | C | ❌ No change (0 frontend tests) |
-| **Documentation** | D | B | ✅ README.md created |
-| **Frontend Functionality** | A | A | ✓ Unchanged |
-| **Backend API** | A | A | ✓ Unchanged|
-| **Code Execution** | A | A | ✓ All 5 modules build |
-| **Overall** | **B** | **B+** | ✅ +documentation, +MCP |
-
----
-
-## 🎯 Next Steps to Improve Grade
-
-### To reach **A**:
-
-1. ✅ **Documentation** (DONE) — Root README.md complete
-2. ⚠️ **Fix warnings** (EASY) — Set `spring.jpa.open-in-view=false`
-3. ❌ **Front-end tests** (MEDIUM) — Add 15-25 Vitest tests
-4. ❌ **Clean dependencies** (EASY) — Remove react-router, fix axios
-5. ❌ **Back-end unit tests** (MEDIUM) — Add `TaskServiceTest.java`
-6. ⚠️ **Security** (EASY) — Disable H2 console in production
+### 9. WAR packaging not documented (L17)
+- **Issue:** `BackendApplication` extends `SpringBootServletInitializer` / WAR — not obvious how to deploy.
+- **Status:** ✅ Root `README.md` now documents `java -jar backend/target/backend-0.0.1-SNAPSHOT.war`.
 
 ---
 
-## Summary
+## 📊 Grade Impact
 
-**Major Fix:** Root README.md now provides complete setup instructions  
-**New Addition:** MCP Server module successfully integrated and builds  
-**Remaining Gaps:** Frontend tests (critical), config warnings, unused dependencies
+| Area | Original | Now | Change |
+|------|----------|-----|--------|
+| **Architecture** | A | A | — |
+| **Testing** | C | B | 16 frontend tests added (was 0) |
+| **Documentation** | D | B+ | README.md created |
+| **Frontend Functionality** | A | A | — |
+| **Backend API** | A | A | H2 console removed from prod |
+| **Code Execution** | A | A | — |
+| **Overall** | **B** | **A-** | +docs, +broader frontend tests, +dep fixes, +service unit tests |
 
-**Current Status:** Ready to run and deploy with `mvn clean install && docker compose up`
+---
 
+## Remaining to reach A
+
+No unresolved items from `REVIEW.md` remain in this tracker.
