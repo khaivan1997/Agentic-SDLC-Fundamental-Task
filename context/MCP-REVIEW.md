@@ -299,3 +299,12 @@ After 7 passes of review and refinement, the MCP implementation is fully complia
 | 1 | `tasksSummary()` still made 2 DB queries: `countTasksByStatus()` + `count()` | Eliminated `count()` — total is now computed by summing group-by results (1 query instead of 2) |
 | 2 | `@Autowired TaskMcpTools` field was placed between test methods in `McpServerIntegrationTests` | Moved to field section at the top of the class with other `@Autowired`/`@Value` fields |
 | 3 | Extra blank line in `application.properties` between JPA config and MCP metadata | Removed |
+
+---
+
+## 14. Ninth Review Pass — Dead Code Removal
+
+| # | Finding | Fix Applied |
+|---|---------|-------------|
+| 1 | `countByStatus(TaskStatus)` in `TaskRepository` is dead code — replaced by `countTasksByStatus()` in pass 5, never used by backend either | Removed method and its unused `TaskStatus` import |
+| 2 | `help()` and `schemaTasks()` lack `@Transactional(readOnly=true)` unlike `tasksSummary()` | **No fix needed** — these methods don't access the database, so adding `@Transactional` would be misleading |
