@@ -73,6 +73,7 @@ class TaskMcpToolsTest {
         assertEquals(Task.TITLE_MAX_LENGTH, title.get("maxLength"));
         assertEquals(Task.DESCRIPTION_MAX_LENGTH, description.get("maxLength"));
         assertEquals(List.of("TODO", "IN_PROGRESS", "DONE"), status.get("enum"));
+        assertEquals(List.of("title"), schema.get("required"));
     }
 
     @Test

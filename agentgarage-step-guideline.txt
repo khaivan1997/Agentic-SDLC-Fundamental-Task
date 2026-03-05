@@ -1,39 +1,271 @@
-AgentGarage Step-by-Step Guideline
+================================================================================
+  AgentGarage Training Exercise – Full Step-by-Step Guideline
+================================================================================
 
-🎯 Objective
-Build a simple SDLC-related workflow where N8N interacts with a local LLM in your AgentGarage environment.
+Repo Location : /Users/khai.a.ngo/Projects/Training/agent-garage
+Exercise Goal : Build an N8N workflow that talks to a local LLM (Ollama)
+                for a simple SDLC use case.
 
-🧪 Step 1: Start the Environment
-1. The AgentGarage repository is located at `/Users/khai.a.ngo/Projects/Training/agent-garage`.
-2. Open a terminal and navigate to the AgentGarage directory:
-   `cd /Users/khai.a.ngo/Projects/Training/agent-garage`
-3. Start the Docker environment:
-   `docker-compose up -d`
-4. Verify the setup by accessing N8N (usually http://localhost:5678) and OpenWebUI/LLM API via your browser.
+================================================================================
+  STEP 1 – START THE ENVIRONMENT
+================================================================================
 
-💡 Step 2: Choose a Simple SDLC Use Case
-Here are ideas from the prompt. We recommend the simplest one to start: Idea 3.
-- Idea 1: Pull Request Description Generator (Send a commit message, get a summarized PR description).
-- Idea 2: Code Review Suggestions (Send a code snippet or diff, get review comments).
-- Idea 3 (Recommended): User Story to Acceptance Criteria in Gherkin format.
+1.1  Open a terminal.
 
-⚙️ Step 3: Create the N8N Workflow
-1. Open your N8N UI (e.g., http://localhost:5678).
-2. Create a new workflow.
-3. Add a Trigger Node: 
-   - Add a "Webhook" node (set it to accept POST requests with JSON payload) or use a manual "Inject" (Manual Trigger) node to start the flow.
-4. Add an LLM / HTTP Request Node: 
-   - If N8N has a dedicated AI/LLM node configured, use it.
-   - Otherwise, use the "HTTP Request" node to call the local LLM API (e.g., Ollama or LM Studio at their respective host ports).
-   - In the Prompt/Body, instruct the LLM: 
-     "You are an Agile Product Owner. Given the following user story, generate acceptance criteria in Gherkin format. 
-     User Story: {{$json.body.userStory}}" (Map the input from the trigger).
-5. Add an Output Node: 
-   - Use a node to save the output to a file or simply return the LLM response in the Webhook Response node.
+1.2  Navigate to the AgentGarage directory:
+       cd /Users/khai.a.ngo/Projects/Training/agent-garage
 
-✅ Step 4: Test and Document
-1. Execute the workflow manually or fire a POST request to the Webhook URL.
-2. Provide a sample input:
-   {"userStory": "As a user, I want to change my password so I can secure my account."}
-3. Wait for the LLM to process and verify it returns correct Gherkin acceptance criteria.
-4. Export your N8N workflow (as a JSON file) or take screenshots to document your success for the assignment!
+1.3  Start Docker containers.
+     You are on macOS (Apple Silicon), so you CANNOT expose GPU to Docker.
+     You have two options:
+
+     OPTION A – Run Ollama inside Docker on CPU (slower, simpler):
+       docker compose --profile cpu up
+
+     OPTION B – Run Ollama natively on your Mac (faster, recommended):
+       a) Install Ollama from https://ollama.com/ if not already installed.
+       b) Start Ollama natively:  ollama serve
+       c) Pull the model:         ollama pull llama3.2
+       d) Start AgentGarage WITHOUT the Ollama container:
+            docker compose up
+       e) After the containers are running, you must update the Ollama
+          connection inside N8N so it points to your Mac host:
+            - Go to http://localhost:5678/home/credentials
+            - Click on "Local Ollama service"
+            - Change the Base URL to: http://host.docker.internal:11434/
+            - Save
+
+1.4  Wait for all containers to start. You will see:
+       "Editor is now accessible via: http://localhost:5678/"
+
+     The following services will be available:
+       - N8N           → http://localhost:5678
+       - OpenWebUI     → http://localhost:3000
+       - Ollama API    → http://localhost:11434
+       - Qdrant        → http://localhost:6333
+       - Jira          → http://localhost:8080 (optional, not needed for this task)
+
+================================================================================
+  STEP 2 – SET UP N8N (First Time Only)
+================================================================================
+
+2.1  Open http://localhost:5678 in your browser.
+
+2.2  A registration form will appear. Fill in any data (email is not validated).
+     This sets up your local N8N admin account. You only do this once.
+
+2.3  After registration, the N8N dashboard loads showing all pre-built workflows:
+       1   - User Story Creator          (Simple, single-agent)
+       2   - Manager Agent               (Multi-agent supervisor)
+       2.1 - Jira Agent                  (Sub-agent)
+       2.2 - User Story Agent            (Sub-agent)
+       2.3 - Bugreport Agent             (Sub-agent)
+       2.4 - Logfile Agent               (Sub-agent)
+       3   - Spec-Driven Developer       (Advanced, 11 agents)
+       4   - Multi-Model Architecture    (Multi-modal, image + text)
+
+================================================================================
+  STEP 3 – SET UP OPENWEBUI
+================================================================================
+
+3.1  Open http://localhost:3000 in your browser.
+
+3.2  Sign in with the pre-configured credentials:
+       Email:    admin@test.com
+       Password: S2yjzup!3
+
+3.3  After login, you will see the chat interface.
+     OpenWebUI acts as the frontend for chatting with the LLM and N8N workflows.
+
+================================================================================
+  STEP 4 – VERIFY EVERYTHING WORKS (Quick Smoke Test)
+================================================================================
+
+4.1  Go back to N8N (http://localhost:5678).
+
+4.2  Click on the "User Story Creator" workflow (Workflow #1).
+
+4.3  Review the workflow nodes to understand how they connect.
+
+4.4  Activate the workflow by clicking the "Active" toggle (top-right).
+
+4.5  Go to OpenWebUI (http://localhost:3000).
+
+4.6  Select the "User Story Creator" chat from the model/chat list.
+
+4.7  Type a message like:
+       "Create a user story for a login function"
+
+4.8  If you get a structured user story back, your environment is working!
+
+================================================================================
+  STEP 5 – BUILD YOUR OWN WORKFLOW (The Actual Assignment)
+================================================================================
+
+The assignment requires you to build a SIMPLE N8N workflow that:
+  ✅ Includes at least one API request to the local LLM
+  ✅ Has a traceable input/output flow (Webhook, file, etc.)
+  ✅ Has prompt design (how N8N "talks" to the LLM)
+
+----- RECOMMENDED USE CASE: PR Description Generator -----
+
+This is the simplest to implement and ties directly to your Task Manager project.
+
+5.1  In N8N, click "+ Add Workflow" (top-right) to create a new workflow.
+
+5.2  Add Node 1 – Webhook (Trigger):
+     - Search for "Webhook" in the node panel and add it.
+     - Set HTTP Method to POST.
+     - Set Path to something like: pr-description
+     - This gives you a URL: http://localhost:5678/webhook/pr-description
+
+5.3  Add Node 2 – Ollama Chat Model (LLM Call):
+     - Search for "AI Agent" or "Ollama" in the node panel.
+
+     OPTION A (Simple – HTTP Request node):
+       - Add an "HTTP Request" node.
+       - Method: POST
+       - URL: http://ollama:11434/api/generate
+         (If running Ollama natively: http://host.docker.internal:11434/api/generate)
+       - Body (JSON):
+         {
+           "model": "llama3.2",
+           "prompt": "You are a senior software engineer. Generate a clean, professional Pull Request description based on these commit messages:\n\n{{ $json.body.commits }}\n\nWrite a title, summary, and list of changes.",
+           "stream": false
+         }
+       - Connect the Webhook node output to this node's input.
+
+     OPTION B (Using built-in AI Agent node):
+       - Add an "AI Agent" node.
+       - Connect it to an "Ollama Chat Model" sub-node.
+       - Set the model to "llama3.2:latest".
+       - In the System Message, write:
+           "You are a senior software engineer. When given commit messages,
+            generate a clean, professional Pull Request description with a
+            title, summary, and list of key changes."
+       - Map the user message to: {{ $json.body.commits }}
+
+5.4  Add Node 3 – Respond to Webhook (Output):
+     - Search for "Respond to Webhook" and add it.
+     - Map the response body to the LLM's output.
+     - This sends the generated PR description back as the HTTP response.
+
+5.5  Connect the nodes: Webhook → HTTP Request/AI Agent → Respond to Webhook
+
+5.6  Save and Activate the workflow.
+
+================================================================================
+  STEP 6 – TEST YOUR WORKFLOW
+================================================================================
+
+6.1  Open a terminal and send a test request:
+
+     curl http://localhost:5678/webhook/pr-description \
+       --request POST \
+       --header "Content-Type: application/json" \
+       --data '{
+         "commits": "feat: add task CRUD endpoints\nfix: resolve CORS configuration issue\nrefactor: extract TaskService from controller\ntest: add integration tests for TaskController\ndocs: update API documentation"
+       }'
+
+6.2  You should receive a nicely formatted PR description back from the LLM.
+
+6.3  Example expected output (varies by LLM):
+     -------------------------------------------------------
+     ## PR Title: Task Management API Implementation
+
+     ### Summary
+     This PR implements the core Task Management REST API with full CRUD
+     operations, including proper service layer extraction and CORS support.
+
+     ### Changes
+     - Added Task CRUD endpoints (GET, POST, PUT, DELETE)
+     - Fixed CORS configuration for frontend-backend communication
+     - Refactored business logic into dedicated TaskService
+     - Added integration tests for all TaskController endpoints
+     - Updated API documentation
+     -------------------------------------------------------
+
+================================================================================
+  STEP 7 – DOCUMENT YOUR WORK
+================================================================================
+
+7.1  Take screenshots of:
+     a) Your N8N workflow (the node graph).
+     b) The terminal showing the curl request and LLM response.
+     c) (Optional) The OpenWebUI chat if you also tested via chat.
+
+7.2  Export your N8N workflow as JSON:
+     - In N8N, open your workflow.
+     - Click the "..." menu (top-right) → "Export" or "Download".
+     - Save the JSON file in your project.
+
+7.3  Write a short summary of:
+     - What use case you chose and why.
+     - How the prompt was designed.
+     - What you learned about N8N + LLM integration.
+
+================================================================================
+  ALTERNATIVE USE CASES (If you prefer something different)
+================================================================================
+
+A) Code Review Suggestions:
+   - Webhook receives a code snippet or diff.
+   - LLM prompt: "Review this code and provide suggestions for improvement."
+   - Returns review comments.
+
+B) User Story to Acceptance Criteria (Gherkin):
+   - Webhook receives a plain-text user story.
+   - LLM prompt: "Convert this user story into Gherkin acceptance criteria."
+   - Returns structured Given/When/Then scenarios.
+
+C) Bug Report Generator:
+   - Webhook receives a log file snippet or error trace.
+   - LLM prompt: "Analyze this error and generate a structured bug report."
+   - Returns a bug report with title, steps to reproduce, expected/actual behavior.
+
+================================================================================
+  TROUBLESHOOTING
+================================================================================
+
+Problem: N8N shows "could not connect to Ollama"
+  → If running Ollama natively on Mac, make sure the credential Base URL
+    is set to http://host.docker.internal:11434/ (not localhost).
+  → If running Ollama in Docker (--profile cpu), make sure the URL is
+    http://ollama:11434/ (the Docker container hostname).
+
+Problem: LLM response is very slow
+  → llama3.2 on CPU can be slow. Be patient (30-60 seconds).
+  → Consider using a smaller model like "phi3" for faster responses.
+
+Problem: OpenWebUI shows blank page or timeout
+  → Reload the page. OpenWebUI sometimes has display delays.
+  → Check that the openwebui container is running: docker ps
+
+Problem: Containers won't start
+  → Make sure Docker Desktop is running on your Mac.
+  → Check for port conflicts: lsof -i :5678 and lsof -i :3000
+  → Try: docker compose down && docker compose --profile cpu up
+
+================================================================================
+  QUICK REFERENCE – Key URLs & Credentials
+================================================================================
+
+  N8N Interface:     http://localhost:5678
+  OpenWebUI:         http://localhost:3000
+    Email:           admin@test.com
+    Password:        S2yjzup!3
+  Ollama API:        http://localhost:11434
+  Ollama (Docker):   http://ollama:11434       (from inside containers)
+  Ollama (Mac):      http://host.docker.internal:11434  (from inside containers)
+
+================================================================================
+  .env CONFIGURATION (already set in the repo)
+================================================================================
+
+  OLLAMA_MODEL=llama3.2
+  OLLAMA_ADDITIONAL_MODELS=qwen3-vl:8b
+  POSTGRES_USER=root
+  POSTGRES_PASSWORD=password
+  POSTGRES_DB=n8n
+  N8N_ENCRYPTION_KEY=super-secret-key
+  N8N_USER_MANAGEMENT_JWT_SECRET=even-more-secret

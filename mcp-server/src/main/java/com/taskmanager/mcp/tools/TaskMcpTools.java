@@ -33,10 +33,10 @@ public class TaskMcpTools {
     @McpTool(name = "mcp-help", description = "Returns available MCP tools and how to use them")
     public Map<String, Object> help() {
         Map<String, String> tools = new LinkedHashMap<>();
-        tools.put("mcp-help", "Shows all available tools.");
-        tools.put("mcp-schema-tasks", "Returns a JSON-style schema for the tasks table.");
-        tools.put("mcp-tasks", "Accepts a JSON array of tasks and inserts them in bulk.");
-        tools.put("mcp-tasks-summary", "Returns total task count and count by status.");
+        tools.put("mcp-help", "Returns available MCP tools and how to use them.");
+        tools.put("mcp-schema-tasks", "Returns the schema for the tasks table.");
+        tools.put("mcp-tasks", "Bulk inserts tasks into PostgreSQL.");
+        tools.put("mcp-tasks-summary", "Returns count of tasks grouped by status.");
 
         return Map.of(
                 "module", "mcp-server",
