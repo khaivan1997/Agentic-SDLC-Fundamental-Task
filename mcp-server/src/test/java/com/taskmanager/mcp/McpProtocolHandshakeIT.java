@@ -29,14 +29,17 @@ class McpProtocolHandshakeIT {
     @Value("${spring.ai.mcp.server.sse-endpoint:/sse}")
     private String sseEndpoint;
 
-    @Test
-    void initializeNegotiatesSdkProtocolVersion() {
-        String baseUri = "http://localhost:" + serverPort;
-        HttpClientSseClientTransport transport = HttpClientSseClientTransport.builder(baseUri)
+    private McpSyncClient createClient() {
+        HttpClientSseClientTransport transport = HttpClientSseClientTransport
+            .builder("http://localhost:" + serverPort)
             .sseEndpoint(sseEndpoint)
             .build();
+        return McpClient.sync(transport).build();
+    }
 
-        McpSyncClient client = McpClient.sync(transport).build();
+    @Test
+    void initializeNegotiatesSdkProtocolVersion() {
+        McpSyncClient client = createClient();
         try {
             McpSchema.InitializeResult result = client.initialize();
             assertEquals(McpSchema.LATEST_PROTOCOL_VERSION, result.protocolVersion());
@@ -47,12 +50,7 @@ class McpProtocolHandshakeIT {
 
     @Test
     void mcpTools_areDiscoverableAndCallableOverProtocol() {
-        String baseUri = "http://localhost:" + serverPort;
-        HttpClientSseClientTransport transport = HttpClientSseClientTransport.builder(baseUri)
-            .sseEndpoint(sseEndpoint)
-            .build();
-
-        McpSyncClient client = McpClient.sync(transport).build();
+        McpSyncClient client = createClient();
         try {
             client.initialize();
 
@@ -79,12 +77,7 @@ class McpProtocolHandshakeIT {
 
     @Test
     void mcpTasks_bulkInsertAndSummaryOverProtocol() {
-        String baseUri = "http://localhost:" + serverPort;
-        HttpClientSseClientTransport transport = HttpClientSseClientTransport.builder(baseUri)
-            .sseEndpoint(sseEndpoint)
-            .build();
-
-        McpSyncClient client = McpClient.sync(transport).build();
+        McpSyncClient client = createClient();
         try {
             client.initialize();
 

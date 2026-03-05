@@ -102,7 +102,7 @@ Each step below includes human review and decision-making. AI output was never a
 - **Human review and fixes**: Developer manually applied several code quality improvements that AI missed:
   - Replaced hardcoded magic numbers with `Task.TITLE_MAX_LENGTH` / `DESCRIPTION_MAX_LENGTH` constants.
   - Externalized DB credentials and CORS origins to environment variables.
-  - Fixed incorrect annotations (`@McpTool` → `@Tool` for Spring AI 1.0.0 GA).
+  - Resolved annotation compatibility: kept `@McpTool`/`@McpToolParam` from `org.springaicommunity.mcp.annotation` (community package) as it is what works with the Spring AI MCP Server starter in this project setup.
   - Cleaned up error handling in frontend (`alert()` → inline error display, removed unused catch params).
   - Added `Locale.ROOT` to `toUpperCase()` for locale safety.
   - Resolved Maven dependency issues caused by corporate Artifactory.
@@ -114,7 +114,7 @@ Each step below includes human review and decision-making. AI output was never a
 
 ### 6) Build/Test Results
 - Backend: 14/14 unit tests passed.
-- MCP server: 6/6 unit tests passed (written by developer after code review).
+- MCP server: 13/13 unit tests passed + 4 integration tests passed (written by developer after code review).
 - **Human verification**: Developer ran builds, inspected terminal output, confirmed test results, and resolved build blockers (corrupted Maven cache, annotation mismatches) manually.
 - Evidence: `context/test-result.txt` with detailed per-module results.
 

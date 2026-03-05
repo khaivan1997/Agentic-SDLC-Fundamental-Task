@@ -17,11 +17,11 @@ public class Task {
     private Long id;
 
     @NotBlank(message = "Title is required")
-    @Size(max = TITLE_MAX_LENGTH, message = "Title must not exceed 100 characters")
+    @Size(max = TITLE_MAX_LENGTH, message = "Title must not exceed " + TITLE_MAX_LENGTH + " characters")
     @Column(nullable = false, length = TITLE_MAX_LENGTH)
     private String title;
 
-    @Size(max = DESCRIPTION_MAX_LENGTH, message = "Description must not exceed 500 characters")
+    @Size(max = DESCRIPTION_MAX_LENGTH, message = "Description must not exceed " + DESCRIPTION_MAX_LENGTH + " characters")
     @Column(length = DESCRIPTION_MAX_LENGTH)
     private String description;
 

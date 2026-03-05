@@ -1,6 +1,6 @@
 # Code Review — MCP Server Implementation
 
-**Review Date:** 2026-03-05  
+**Review Date:** 2026-03-05 (updated after fixes)  
 **Spec:** `context/request-ext.txt` (Accenture Agentic SDLC Advanced)
 
 ---
@@ -40,9 +40,11 @@
 - **Constructor injection**: Used consistently in `TaskMcpTools`.
 - **Annotation-based MCP**: `@McpTool` / `@McpToolParam` from Spring AI community — auto-registered with the MCP protocol handler.
 
-### ⚠️ Observations
-- **`spring.jpa.open-in-view`** not set in MCP server `application.properties`. Both `backend` configs now have it set to `false`, but `mcp-server` does not.
-- **`spring.jpa.show-sql=true`** left on in production config — verbose logging in production.
+### ✅ Previously Flagged — Now Fixed
+- ~~`spring.jpa.open-in-view` not set~~ → ✅ Set to `false` in both prod and test properties.
+- ~~`spring.jpa.show-sql=true` in production~~ → ✅ Set to `false`.
+
+### ⚠️ Remaining Observation
 - **No health or readiness endpoint** — makes it harder to validate MCP server status in orchestrated environments.
 
 ---
@@ -59,9 +61,9 @@
 | **Partial insert** | ✅ Valid tasks saved even when some are rejected; errors collected with index |
 | **Transaction safety** | ✅ `@Transactional` on `insertTasks` |
 | **Response structure** | ✅ Returns `received`, `inserted`, `rejected`, `totalInDatabase`, and optional `errors` |
-| **Schema accuracy** | ✅ Uses `Task.TITLE_MAX_LENGTH` / `DESCRIPTION_MAX_LENGTH` constants; enum values hardcoded to match `TaskStatus` |
+| **Schema accuracy** | ✅ Uses `Task.TITLE_MAX_LENGTH` / `DESCRIPTION_MAX_LENGTH` constants; enum values derived from `TaskStatus.values()` |
 
-**Minor improvement suggestion:** The `schemaTasks()` method hard-codes `List.of("TODO", "IN_PROGRESS", "DONE")` instead of deriving from `TaskStatus.values()`. If a new status is added to the enum, the schema would be out of sync. Low risk, but worth noting.
+~~**Previously flagged:** `schemaTasks()` hard-coded enum values.~~ → ✅ Fixed — now derived from `TaskStatus.values()`.
 
 ### DTOs
 
@@ -74,7 +76,7 @@
 
 ## 5. Test Coverage Analysis
 
-### Unit Tests: `TaskMcpToolsTest.java` — 8 tests
+### Unit Tests: `TaskMcpToolsTest.java` — 13 tests
 
 | # | Test | Tool Covered | What it verifies |
 |---|------|-------------|------------------|
@@ -86,8 +88,13 @@
 | 6 | `insertTasks_withInvalidTask_rejectsAndDoesNotSave` | `mcp-tasks` | Blank title rejected, `saveAll` not called |
 | 7 | `tasksSummary_returnsCountsFromRepository` | `mcp-tasks-summary` | Correct total + per-status |
 | 8 | `tasksSummary_emptyDatabase_returnsZeroCounts` | `mcp-tasks-summary` | All zeros |
+| 9 | `insertTasks_withNull_returnsZeroCounts` | `mcp-tasks` | Null input returns zeros, no DB call |
+| 10 | `insertTasks_withEmptyList_returnsZeroCounts` | `mcp-tasks` | Empty list returns zeros, no DB call |
+| 11 | `insertTasks_mixedValidAndInvalid_savesOnlyValid` | `mcp-tasks` | Partial insert: valid saved, invalid rejected |
+| 12 | `insertTasks_withDescriptionTooLong_rejects` | `mcp-tasks` | Description > 500 chars rejected |
+| 13 | `insertTasks_withInvalidStatus_rejects` | `mcp-tasks` | Invalid enum value rejected |
 
-**Assessment:** All 4 tools covered with good variety. Uses `ArgumentCaptor` to verify saved entities. Mockito mocks ensure isolation from the DB.
+**Assessment:** All 4 tools covered with comprehensive variety including edge cases. Uses `ArgumentCaptor` to verify saved entities. Mockito mocks ensure isolation from the DB.
 
 ### Integration Tests: `McpServerIntegrationTests.java` — 4 tests
 
@@ -110,16 +117,18 @@
 
 **Assessment:** These are the most valuable tests — they exercise the full MCP client→server→DB pipeline. They are gated behind `-Dmcp.handshake.test=true` because they require a real running server (RANDOM_PORT), which is reasonable.
 
-### Test Coverage Gaps
+### Remaining Test Gaps
 
 | Gap | Severity | Description |
 |---|---------|-------------|
-| No 1000-record insert test | ⚠️ Medium | Spec explicitly requires inserting 1000 records. While the 10 and 50 record tests validate the path, a 1000-record test would prove spec compliance. |
-| No test for null/empty list input | Low | `insertTasks(null)` and `insertTasks([])` paths return early message but aren't tested. |
-| No test for mixed valid+invalid batch | Low | Only pure-valid and pure-invalid batches are tested. A mixed batch (some valid, some invalid) is the `insertTasks` partial-insert path but isn't explicitly tested. |
+| No 1000-record insert test | ⚠️ Medium | Spec explicitly requires inserting 1000 records. The 10 and 50 record tests validate the path, but a 1000-record test would prove spec compliance. |
 | No test for `mcp-help` over protocol | Low | `McpProtocolHandshakeIT` calls `mcp-schema-tasks`, `mcp-tasks`, `mcp-tasks-summary` over protocol but skips `mcp-help`. |
-| No description length validation test | Low | Title validation (blank, too long) is tested, but `description > 500 chars` rejection is not. |
-| No invalid status test | Low | `parseStatus` with an invalid enum value is validated in the code but not unit-tested. |
+
+**Previously flagged — now covered:**
+- ~~Null/empty list input~~ → ✅ `insertTasks_withNull`, `insertTasks_withEmptyList`
+- ~~Mixed valid+invalid batch~~ → ✅ `insertTasks_mixedValidAndInvalid_savesOnlyValid`
+- ~~Description too long~~ → ✅ `insertTasks_withDescriptionTooLong_rejects`
+- ~~Invalid status~~ → ✅ `insertTasks_withInvalidStatus_rejects`
 
 ---
 
@@ -127,16 +136,21 @@
 
 | Test Class | Tests | Type | Run by default? |
 |---|---|---|---|
-| `TaskMcpToolsTest` | 8 | Unit (Mockito) | ✅ Yes |
+| `TaskMcpToolsTest` | 13 | Unit (Mockito) | ✅ Yes |
 | `McpServerIntegrationTests` | 4 | Integration (Spring Boot) | ✅ Yes |
 | `McpProtocolHandshakeIT` | 3 | Protocol (MCP Client) | ❌ Only with `-Dmcp.handshake.test=true` |
-| **Total** | **15** | | **12 default, 3 gated** |
+| **Total** | **20** | | **17 default, 3 gated** |
 
 ---
 
-## 7. Build Note
+## 7. Build Verification
 
-⚠️ MCP tests could not be run locally during this review due to corporate Artifactory corrupting Spring Boot parent POM (`spring-boot-starter-parent-3.4.3.pom` downloaded as HTML instead of XML). Previous successful run documented in `context/test-result.txt` (12/12 default tests pass).
+```
+Tests run: 17, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+✅ All 17 default tests pass. `spring.jpa.open-in-view` warning no longer appears in output.
 
 ---
 
@@ -145,7 +159,90 @@
 | Area | Grade | Notes |
 |------|-------|-------|
 | **Spec compliance** | **A-** | All 4 tools implemented correctly. MCP 2025-06-18 validated. Missing automated 1000-record test. |
-| **Code quality** | **A** | Clean, well-validated, transaction-safe, locale-aware, good error reporting. |
-| **Architecture** | **A** | Correct module separation, shared entities, separate port, constructor injection. |
-| **Test coverage** | **B+** | 12 default tests covering all tools. Protocol tests exist but gated. Minor gaps in edge cases. |
-| **Overall** | **A-** | Solid implementation that meets the spec requirements. |
+| **Code quality** | **A** | Clean, well-validated, transaction-safe, locale-aware, enum-safe, good error reporting. |
+| **Architecture** | **A** | Correct module separation, shared entities, separate port, constructor injection, proper config. |
+| **Test coverage** | **A-** | 17 default tests covering all tools + edge cases. Protocol tests exist but gated. |
+| **Overall** | **A** | Solid implementation with comprehensive test coverage and clean config. |
+
+---
+
+## 9. Second Review Pass — Supporting Components
+
+**Scope:** `api-models`, root `pom.xml`, `docker-compose.yml`, `AI-USAGE.md`, `README.md`  
+**Excludes:** backend and frontend (verified separately).
+
+---
+
+### `api-models` Module
+
+| File | Assessment |
+|------|-----------|
+| `Task.java` | ✅ Clean JPA entity. Constants (`TITLE_MAX_LENGTH`, `DESCRIPTION_MAX_LENGTH`) used in `@Size` and `@Column`. Default constructor sets `status = TODO`. Convenience constructor handles null status. `@Enumerated(STRING)` for PostgreSQL compatibility. |
+| `TaskStatus.java` | ✅ Simple enum: `TODO`, `IN_PROGRESS`, `DONE`. |
+| `TaskRepository.java` | ✅ `JpaRepository<Task, Long>` with `countByStatus(TaskStatus)` derived query. `@Repository` annotated. |
+| `pom.xml` | ✅ Packaging `jar`, correct dependencies (`spring-boot-starter-data-jpa`, `spring-boot-starter-validation`). |
+
+⚠️ **Minor:** `@Size` message in `Task.java` line 20 says `"Title must not exceed 100 characters"` (hardcoded number) instead of referencing the constant. Same for description on line 24. Not a bug (constants control the actual limit), but the message could drift if constants change.
+
+---
+
+### Root `pom.xml`
+
+| Item | Value | Assessment |
+|------|-------|-----------|
+| Parent | `spring-boot-starter-parent:3.4.3` | ✅ Current |
+| Modules | `api-models`, `frontend`, `backend`, `mcp-server` | ✅ Correct build order (api-models first) |
+| `java.version` | `17` | ✅ Matches spec requirement |
+| `spring-ai.version` | `1.1.0-M2` | ⚠️ Milestone release — production projects should pin to GA when available |
+| `postgresql.version` | `42.2.27` | ⚠️ **Outdated** — latest is 42.7.x. 42.2.x is in maintenance-only mode. No security CVEs blocking, but worth upgrading. |
+
+---
+
+### `docker-compose.yml`
+
+| Item | Assessment |
+|------|-----------|
+| Image | `postgres:16` | ✅ Good — explicit major version, no `latest` |
+| Port | `${POSTGRES_PORT:-5436}:5432` | ✅ Env-configurable with sensible default |
+| Credentials | Env-configurable with defaults matching `application.properties` | ✅ |
+| Volume | `pgdata` named volume for persistence | ✅ |
+
+✅ Clean and correct. No issues found.
+
+---
+
+### `AI-USAGE.md`
+
+| Item | Assessment |
+|------|-----------|
+| Workflow documentation | ✅ Detailed multi-phase SDLC with tool selection rationale |
+| MCP workflow section | ✅ 6-step log with human review documented per step |
+| Critical reflection | ✅ Honest about challenges (context handoff, code style, validation gaps) |
+
+⚠️ **Stale test count (line 117):** Says `"MCP server: 6/6 unit tests passed"` — should now be **13/13 unit tests** (8 original + 5 added).  
+⚠️ **Stale annotation note (line 105):** Says `"Fixed incorrect annotations (@McpTool → @Tool for Spring AI 1.0.0 GA)"` — current code uses `@McpTool` from `org.springaicommunity.mcp.annotation`, not the Spring AI core `@Tool`. The note is confusing as-is.
+
+---
+
+### `README.md` — MCP Section
+
+| Item | Assessment |
+|------|-----------|
+| MCP Server tools table | ✅ All 4 tools listed with correct descriptions |
+| Running instructions | ✅ `java -jar mcp-server/target/mcp-server-0.0.1-SNAPSHOT.jar` |
+| SSE endpoint | ✅ `http://localhost:8081/sse` |
+| Example AI prompt | ✅ Present |
+
+✅ MCP documentation in README is accurate and complete.
+
+---
+
+### Summary of Second Pass Findings
+
+| # | Finding | Severity | Fix? |
+|---|---------|----------|------|
+| 1 | `postgresql.version=42.2.27` is outdated (latest 42.7.x) | ⚠️ Low | Optional — no CVE, but maintenance-only branch |
+| 2 | `AI-USAGE.md` says 6/6 MCP tests — should be 13/13 | ⚠️ Low | Update line 117 |
+| 3 | `AI-USAGE.md` annotation note is confusing | ⚠️ Low | Clarify or remove line 105 |
+| 4 | `@Size` message strings hardcode numbers | Low | Cosmetic — doesn't affect behavior |
+| 5 | `spring-ai.version=1.1.0-M2` is a milestone | Low | Pin to GA when released |

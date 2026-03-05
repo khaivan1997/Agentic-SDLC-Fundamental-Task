@@ -94,6 +94,7 @@ class TaskMcpToolsTest {
         assertEquals(1, savedTasks.size());
         assertEquals("Task 1", savedTasks.get(0).getTitle());
         assertEquals(TaskStatus.DONE, savedTasks.get(0).getStatus());
+        assertEquals(LocalDate.of(2026, 2, 22), savedTasks.get(0).getDueDate());
         assertEquals(1, result.get("received"));
         assertEquals(1, result.get("inserted"));
         assertEquals(0, result.get("rejected"));
@@ -185,5 +186,93 @@ class TaskMcpToolsTest {
         assertEquals(0L, summary.getByStatus().get("TODO"));
         assertEquals(0L, summary.getByStatus().get("IN_PROGRESS"));
         assertEquals(0L, summary.getByStatus().get("DONE"));
+    }
+
+    @Test
+    void insertTasks_withNull_returnsZeroCounts() {
+        Map<String, Object> result = tools.insertTasks(null);
+
+        assertEquals(0, result.get("inserted"));
+        assertEquals(0, result.get("rejected"));
+        verify(taskRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void insertTasks_withEmptyList_returnsZeroCounts() {
+        Map<String, Object> result = tools.insertTasks(List.of());
+
+        assertEquals(0, result.get("inserted"));
+        assertEquals(0, result.get("rejected"));
+        verify(taskRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void insertTasks_mixedValidAndInvalid_savesOnlyValid() {
+        when(taskRepository.count()).thenReturn(1L);
+
+        TaskInput valid = new TaskInput();
+        valid.setTitle("Valid task");
+        valid.setStatus("TODO");
+
+        TaskInput invalid = new TaskInput();
+        invalid.setTitle("   ");
+        invalid.setStatus("TODO");
+
+        Map<String, Object> result = tools.insertTasks(List.of(valid, invalid));
+
+        ArgumentCaptor<List<Task>> captor = ArgumentCaptor.forClass(List.class);
+        verify(taskRepository).saveAll(captor.capture());
+        assertEquals(1, captor.getValue().size());
+        assertEquals("Valid task", captor.getValue().get(0).getTitle());
+        assertEquals(2, result.get("received"));
+        assertEquals(1, result.get("inserted"));
+        assertEquals(1, result.get("rejected"));
+        assertTrue(result.containsKey("errors"));
+    }
+
+    @Test
+    void insertTasks_withDescriptionTooLong_rejects() {
+        when(taskRepository.count()).thenReturn(0L);
+
+        TaskInput input = new TaskInput();
+        input.setTitle("Valid");
+        input.setDescription("D".repeat(Task.DESCRIPTION_MAX_LENGTH + 1));
+        input.setStatus("TODO");
+
+        Map<String, Object> result = tools.insertTasks(List.of(input));
+
+        verify(taskRepository, never()).saveAll(anyList());
+        assertEquals(0, result.get("inserted"));
+        assertEquals(1, result.get("rejected"));
+    }
+
+    @Test
+    void insertTasks_withInvalidStatus_rejects() {
+        when(taskRepository.count()).thenReturn(0L);
+
+        TaskInput input = new TaskInput();
+        input.setTitle("Valid");
+        input.setStatus("INVALID_STATUS");
+
+        Map<String, Object> result = tools.insertTasks(List.of(input));
+
+        verify(taskRepository, never()).saveAll(anyList());
+        assertEquals(0, result.get("inserted"));
+        assertEquals(1, result.get("rejected"));
+    }
+
+    @Test
+    void insertTasks_withTitleTooLong_rejects() {
+        when(taskRepository.count()).thenReturn(0L);
+
+        TaskInput input = new TaskInput();
+        input.setTitle("T".repeat(Task.TITLE_MAX_LENGTH + 1));
+        input.setStatus("TODO");
+
+        Map<String, Object> result = tools.insertTasks(List.of(input));
+
+        verify(taskRepository, never()).saveAll(anyList());
+        assertEquals(0, result.get("inserted"));
+        assertEquals(1, result.get("rejected"));
     }
 }

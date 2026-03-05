@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -45,13 +46,16 @@ public class TaskMcpTools {
         properties.put("id", Map.of("type", "integer", "readOnly", true));
         properties.put("title", Map.of("type", "string", "maxLength", Task.TITLE_MAX_LENGTH));
         properties.put("description", Map.of("type", "string", "maxLength", Task.DESCRIPTION_MAX_LENGTH, "nullable", true));
-        properties.put("status", Map.of("type", "string", "enum", List.of("TODO", "IN_PROGRESS", "DONE")));
+        List<String> statusValues = Arrays.stream(TaskStatus.values())
+                .map(Enum::name)
+                .toList();
+        properties.put("status", Map.of("type", "string", "enum", statusValues));
         properties.put("dueDate", Map.of("type", "string", "format", "date", "nullable", true));
 
         return Map.of(
                 "table", "tasks",
                 "type", "object",
-                "required", List.of("title", "status"),
+                "required", List.of("title"),
                 "properties", properties
         );
     }
@@ -98,13 +102,13 @@ public class TaskMcpTools {
         return response;
     }
 
+    @Transactional(readOnly = true)
     @McpTool(name = "mcp-tasks-summary", description = "Returns count of tasks grouped by status")
     public TaskSummary tasksSummary() {
         Map<String, Long> byStatus = new LinkedHashMap<>();
-        byStatus.put(TaskStatus.TODO.name(), taskRepository.countByStatus(TaskStatus.TODO));
-        byStatus.put(TaskStatus.IN_PROGRESS.name(), taskRepository.countByStatus(TaskStatus.IN_PROGRESS));
-        byStatus.put(TaskStatus.DONE.name(), taskRepository.countByStatus(TaskStatus.DONE));
-
+        for (TaskStatus s : TaskStatus.values()) {
+            byStatus.put(s.name(), taskRepository.countByStatus(s));
+        }
         return new TaskSummary(taskRepository.count(), byStatus);
     }
 
@@ -118,13 +122,16 @@ public class TaskMcpTools {
         if (input.getTitle().trim().length() > Task.TITLE_MAX_LENGTH) {
             return "title exceeds " + Task.TITLE_MAX_LENGTH + " characters";
         }
-        if (input.getDescription() != null && input.getDescription().length() > Task.DESCRIPTION_MAX_LENGTH) {
+        if (input.getDescription() != null && input.getDescription().trim().length() > Task.DESCRIPTION_MAX_LENGTH) {
             return "description exceeds " + Task.DESCRIPTION_MAX_LENGTH + " characters";
         }
         try {
             parseStatus(input.getStatus());
         } catch (IllegalArgumentException ex) {
-            return "status must be one of TODO, IN_PROGRESS, DONE";
+            List<String> validStatuses = Arrays.stream(TaskStatus.values())
+                    .map(Enum::name)
+                    .toList();
+            return "status must be one of " + String.join(", ", validStatuses);
         }
         return null;
     }
