@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -45,10 +46,16 @@ class TaskMcpToolsTest {
         Map<String, String> toolMap = (Map<String, String>) result.get("tools");
 
         assertEquals("mcp-server", result.get("module"));
+        assertEquals(4, toolMap.size());
         assertTrue(toolMap.containsKey("mcp-help"));
         assertTrue(toolMap.containsKey("mcp-schema-tasks"));
         assertTrue(toolMap.containsKey("mcp-tasks"));
         assertTrue(toolMap.containsKey("mcp-tasks-summary"));
+        // Verify descriptions match @McpTool annotation descriptions
+        assertEquals("Returns available MCP tools and how to use them.", toolMap.get("mcp-help"));
+        assertEquals("Returns the schema for the tasks table.", toolMap.get("mcp-schema-tasks"));
+        assertEquals("Bulk inserts tasks into PostgreSQL.", toolMap.get("mcp-tasks"));
+        assertEquals("Returns count of tasks grouped by status.", toolMap.get("mcp-tasks-summary"));
     }
 
     @Test
@@ -72,7 +79,10 @@ class TaskMcpToolsTest {
         assertTrue(properties.containsKey("dueDate"));
         assertEquals(Task.TITLE_MAX_LENGTH, title.get("maxLength"));
         assertEquals(Task.DESCRIPTION_MAX_LENGTH, description.get("maxLength"));
-        assertEquals(List.of("TODO", "IN_PROGRESS", "DONE"), status.get("enum"));
+        List<String> expectedStatuses = Arrays.stream(TaskStatus.values())
+                .map(Enum::name)
+                .toList();
+        assertEquals(expectedStatuses, status.get("enum"));
         assertEquals(List.of("title"), schema.get("required"));
     }
 

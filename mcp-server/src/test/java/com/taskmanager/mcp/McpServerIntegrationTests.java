@@ -1,5 +1,6 @@
 package com.taskmanager.mcp;
 
+import com.taskmanager.mcp.tools.TaskMcpTools;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,8 +10,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,16 +47,20 @@ class McpServerIntegrationTests {
         assertEquals("/sse", configuredSseEndpoint);
     }
 
+    @Autowired
+    private TaskMcpTools taskMcpTools;
+
     @Test
-    void mcpServer_registersExpectedToolCount() {
-        // The MCP auto-configuration logs "Registered tools: 4"
-        // Verify we have exactly the expected number of tool classes
-        @SuppressWarnings("deprecation")
-        String protocolVersion = McpSchema.LATEST_PROTOCOL_VERSION;
-        assertEquals(4, protocolVersion.isEmpty() ? 0 : 4,
-                "Expected 4 MCP tools: mcp-help, mcp-schema-tasks, mcp-tasks, mcp-tasks-summary");
+    void mcpServer_registersToolsBean() {
+        assertNotNull(taskMcpTools, "TaskMcpTools bean should be registered in the Spring context");
+        // Verify help() works end-to-end with the real bean
+        Map<String, Object> helpResult = taskMcpTools.help();
+        @SuppressWarnings("unchecked")
+        Map<String, String> toolMap = (Map<String, String>) helpResult.get("tools");
+        assertEquals(4, toolMap.size(), "Expected 4 MCP tools");
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     void mcpProtocol_supportedVersionFromSdk() {
         assertEquals("2025-06-18", McpSchema.LATEST_PROTOCOL_VERSION);

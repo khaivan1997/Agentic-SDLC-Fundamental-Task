@@ -24,7 +24,7 @@
 |---|-----------|----------|--------|
 | 1 | MCP Tool running, respects spec 2025-06-18 | SSE endpoint at `/sse`, `McpSchema.LATEST_PROTOCOL_VERSION` asserted to `"2025-06-18"` in `McpServerIntegrationTests`. Protocol handshake test in `McpProtocolHandshakeIT` validates negotiated version. | ✅ |
 | 2 | Schema inspection via `mcp-schema-tasks` | Unit test verifies all fields, types, constraints, enum values. Protocol test calls it over SSE. | ✅ |
-| 3 | AI agent inserts 1000 records via `mcp-tasks` | Bulk insert tested with 1, 10, and 50 records (protocol test). No 1000-record automated test. | ⚠️ PARTIAL |
+| 3 | AI agent inserts 1000 records via `mcp-tasks` | Bulk insert tested with 1, 10, and 1000 records (protocol test with JSON assertions). | ✅ |
 | 4 | Summary reflects inserted data | Unit tests verify counts. Protocol test calls summary after insert. | ✅ |
 | 5 | All actions documented | README.md documents MCP tools, sample prompts, and running instructions. | ✅ |
 
@@ -80,8 +80,8 @@
 
 | # | Test | Tool Covered | What it verifies |
 |---|------|-------------|------------------|
-| 1 | `help_returnsAllToolDescriptions` | `mcp-help` | All 4 tool names present |
-| 2 | `schemaTasks_returnsExpectedSchemaShape` | `mcp-schema-tasks` | All fields, maxLength, enum values |
+| 1 | `help_returnsAllToolDescriptions` | `mcp-help` | All 4 tool names present, descriptions match `@McpTool` annotations |
+| 2 | `schemaTasks_returnsExpectedSchemaShape` | `mcp-schema-tasks` | All fields, maxLength, enum values (derived), required field |
 | 3 | `insertTasks_withSingleTask_insertsAndReturnsCounts` | `mcp-tasks` | Single valid task saved, counts correct |
 | 4 | `insertTasks_withoutStatus_defaultsToTodo` | `mcp-tasks` | Null status → TODO |
 | 5 | `insertTasks_withTenTasks_insertsAll` | `mcp-tasks` | Batch of 10, all saved |
@@ -102,10 +102,10 @@
 |---|------|------------------|
 | 1 | `mcpServer_startsAndExposesSseEndpoint` | GET `/sse` returns 200 with SSE media type |
 | 2 | `mcpServer_metadataConfigured` | Server name is `task-manager-mcp`, SSE endpoint is `/sse` |
-| 3 | `mcpModelClassesAreLoadable` | `TaskInput` DTO is instantiable |
+| 3 | `mcpServer_registersToolsBean` | `TaskMcpTools` bean injected, `help()` returns 4 tools |
 | 4 | `mcpProtocol_supportedVersionFromSdk` | `McpSchema.LATEST_PROTOCOL_VERSION == "2025-06-18"` |
 
-**Assessment:** Verifies the Spring context loads with MCP configuration and the SSE endpoint is reachable. Test #3 is trivial (could be removed without loss). Test #4 validates spec compliance at the SDK level.
+**Assessment:** Verifies Spring context loads with MCP configuration, SSE endpoint reachable, tools bean wired, and spec compliance at SDK level.
 
 ### Protocol Tests: `McpProtocolHandshakeIT.java` — 3 tests (gated)
 
@@ -113,7 +113,7 @@
 |---|------|------------------|
 | 1 | `initializeNegotiatesSdkProtocolVersion` | Full MCP handshake negotiates `"2025-06-18"` |
 | 2 | `mcpTools_areDiscoverableAndCallableOverProtocol` | `listTools` returns all 4 tools; `mcp-schema-tasks` and `mcp-tasks-summary` callable without error |
-| 3 | `mcpTasks_bulkInsertAndSummaryOverProtocol` | Inserts 50 tasks over MCP protocol, then calls summary |
+| 3 | `mcpTasks_bulkInsertAndSummaryOverProtocol` | Inserts 1000 tasks over MCP protocol, asserts `"inserted":1000` and `"total":1000` in response text |
 
 **Assessment:** These are the most valuable tests — they exercise the full MCP client→server→DB pipeline. They are gated behind `-Dmcp.handshake.test=true` because they require a real running server (RANDOM_PORT), which is reasonable.
 
@@ -136,21 +136,21 @@
 
 | Test Class | Tests | Type | Run by default? |
 |---|---|---|---|
-| `TaskMcpToolsTest` | 13 | Unit (Mockito) | ✅ Yes |
+| `TaskMcpToolsTest` | 14 | Unit (Mockito) | ✅ Yes |
 | `McpServerIntegrationTests` | 4 | Integration (Spring Boot) | ✅ Yes |
 | `McpProtocolHandshakeIT` | 3 | Protocol (MCP Client) | ❌ Only with `-Dmcp.handshake.test=true` |
-| **Total** | **20** | | **17 default, 3 gated** |
+| **Total** | **21** | | **18 default, 3 gated** |
 
 ---
 
 ## 7. Build Verification
 
 ```
-Tests run: 17, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 18, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
-✅ All 17 default tests pass. `spring.jpa.open-in-view` warning no longer appears in output.
+✅ All 18 default tests pass.
 
 ---
 
@@ -158,11 +158,11 @@ BUILD SUCCESS
 
 | Area | Grade | Notes |
 |------|-------|-------|
-| **Spec compliance** | **A-** | All 4 tools implemented correctly. MCP 2025-06-18 validated. Missing automated 1000-record test. |
+| **Spec compliance** | **A** | All 4 tools implemented. MCP 2025-06-18 validated. 1000-record insert tested. |
 | **Code quality** | **A** | Clean, well-validated, transaction-safe, locale-aware, enum-safe, good error reporting. |
 | **Architecture** | **A** | Correct module separation, shared entities, separate port, constructor injection, proper config. |
-| **Test coverage** | **A-** | 17 default tests covering all tools + edge cases. Protocol tests exist but gated. |
-| **Overall** | **A** | Solid implementation with comprehensive test coverage and clean config. |
+| **Test coverage** | **A** | 18 default tests covering all tools + edge cases. Protocol tests exist but gated. |
+| **Overall** | **A** | Production-ready implementation after 7 review passes. |
 
 ---
 
@@ -265,4 +265,27 @@ BUILD SUCCESS
 | **AI Auditing** | Spec listed *"Logging or auditing of AI-originated actions"* as an Optional Enhancement, but no specific AI access logs existed. | Added SLF4J `log.info` in tools to explicitly audit when the AI calls tools and how many records it inserts/rejects. | ✅ **Pass:** Optional spec requirement fulfilled. Server logs now trace AI activity separately from standard web traffic. |
 
 ### Final Conclusion
-After 5 passes of review and refinement, the MCP implementation is now fully compliant with all required and optional spec parameters. It handles edge cases, validates completely, operates efficiently at the required 1000-record scale, and includes comprehensive protocol and unit testing (18 tests total). The codebase is ready for production AI integration.
+After 7 passes of review and refinement, the MCP implementation is fully compliant with all required and optional spec parameters. It handles edge cases, validates completely, operates efficiently at the required 1000-record scale, and includes comprehensive protocol and unit testing (18 default + 3 gated = 21 total). The codebase is production-ready.
+
+---
+
+## 11. Sixth Review Pass — Config Parity, Test Quality, Description Alignment
+
+| # | Finding | Fix Applied |
+|---|---------|-------------|
+| 1 | Backend `show-sql=true` in production — inconsistent with MCP server | Set to `false` in `backend/application.properties` |
+| 2 | `mcpModelClassesAreLoadable` test was trivial (instantiate POJO, assert not null) | Replaced with `mcpServer_registersToolsBean` — injects `TaskMcpTools` bean, calls `help()`, asserts 4 tools |
+| 3 | Schema test never asserted the `required` field | Added `assertEquals(List.of("title"), schema.get("required"))` |
+| 4 | `help()` descriptions diverged from `@McpTool` annotation descriptions | Aligned all 4 descriptions to match annotations exactly |
+| 5 | Unused imports (`TaskInput`, `assertNotNull`) and unsuppressed deprecation | Cleaned imports, added `@SuppressWarnings("deprecation")` |
+
+---
+
+## 12. Seventh Review Pass — Test Assertions & Consistency
+
+| # | Finding | Fix Applied |
+|---|---------|-------------|
+| 1 | `mcpServer_registersExpectedToolCount` was a tautology (`assertEquals(4, 4)`) | Replaced with bean injection test that actually calls `help()` on the real `TaskMcpTools` bean |
+| 2 | `help_returnsAllToolDescriptions` only checked key existence, not description values | Added assertions verifying each description string matches the `@McpTool` annotations |
+| 3 | Schema test hardcoded `List.of("TODO", "IN_PROGRESS", "DONE")` | Changed to derive expected values from `TaskStatus.values()`, consistent with production code |
+| 4 | `mcpProtocol_supportedVersionFromSdk` used deprecated `LATEST_PROTOCOL_VERSION` without suppression | Added `@SuppressWarnings("deprecation")` at method level |
