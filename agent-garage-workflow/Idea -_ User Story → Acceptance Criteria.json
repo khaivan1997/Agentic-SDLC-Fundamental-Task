@@ -1,0 +1,205 @@
+{
+  "name": "Idea -> User Story → Acceptance Criteria",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gerkin",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -432,
+        -224
+      ],
+      "id": "e8426fd6-2151-4a08-93c8-cd656ea24191",
+      "name": "Webhook",
+      "webhookId": "4d54073e-6897-4740-be82-2c2766f64f00"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('HTTP Request').item.json.output }}",
+        "options": {
+          "systemMessage": "You take on the role of the Business Analyst in our agile development team. Your primary responsibility is to craft well-structured, clear, and verifiable user stories.\\n\\nInstructions:\\nFormat: Always use the standard template: As a <role> I want <feature/function> so that <benefit>\\n\\nAcceptance Criteria:\\nProvide 3–5 precise criteria per story, phrased as: Given…, When…, Then…"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        64,
+        -224
+      ],
+      "id": "bde86ed7-e975-4633-8d5d-73f516879c3e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "content": "Call Workflow to create user story",
+        "height": 256,
+        "width": 256
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -240,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "242d132b-376a-4fbf-94df-a344f177193b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://n8n:5678/webhook/assistant_on_creating_user_stories",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  JSON.stringify({\n    \"chatInput\": $('Webhook').item.json.body.userStory,\n    \"sessionId\": $('Webhook').item.json.body.sessionId\n  })\n}}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -160,
+        -224
+      ],
+      "id": "74985ea9-b3ad-4d97-8e1c-0c8637129740",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "model": "gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        48,
+        -16
+      ],
+      "id": "f8d0f76b-f5d4-43ef-a5c6-02d375e15f4f",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "PtCMcewR1MpEwpx2",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        176,
+        32
+      ],
+      "id": "c0125771-ed45-4d55-8436-12934c9da292",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        384,
+        -240
+      ],
+      "id": "2f2116d6-3a11-4471-8cdc-fae4cf0ec87b",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "# Description of the workflow\n\nThis advanced workflow chains two AI Agents together to automate the Agile requirements process. It takes a raw user idea entered via Open WebUI, generates a structured User Story, and automatically passes that story to a second AI Agent to define verifiable Acceptance Criteria in Gherkin format. The final comprehensive result is returned directly to the chat.\n\n### 1. Receipt of the user request:\n* A user sends a chat message via Open WebUI containing a rough idea for a feature (e.g., \"I need a forgot password page\").\n* This request triggers the initial custom N8N webhook. The raw chat message is packaged into a JSON payload and securely transmitted to the N8N pipeline.\n\n### 2. Phase 1 - Generation of the User Story:\n* The initiating workflow maps the input and forwards it to the primary AI Agent (\"User Story Creator\").\n* This agent acts as a Business Analyst, analyzing the raw input and formulating a standardized User Story (following the format: ‘As a [role], I want [...] so that [...]’). \n* Instead of returning this story to the user, the N8N workflow captures this structured text to use as the foundation for the next step.\n\n### 3. Phase 2 - Generation of Acceptance Criteria:\n* An HTTP POST node dynamically maps the output from Phase 1 and passes the completed User Story directly into a second AI Agent Node (\"Gherkin Generator\").\n* This second agent uses a specialized prompt to extract the intent of the finalized User Story and drafts 3–5 precise rules using the industry-standard Given/When/Then (Gherkin) behavior-driven development format.\n\n### 4. Final Delivery:\n* The final Acceptance Criteria are captured by a \"Respond to Webhook\" node.\n* N8N sends the completed, highly-structured Agile requirements back to OpenWebUI, where they are displayed to the user in a single cohesive chat response.\n",
+        "height": 1040,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        576,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "a0152d0e-eb9e-4638-96bf-4e27996e3c45",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "28f90c55-76ee-4fc0-9bb8-03cbdf16e0cd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "7GBUHIibCeUS5owJ",
+  "tags": []
+}
