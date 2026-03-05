@@ -26,6 +26,9 @@ class McpServerIntegrationTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private TaskMcpTools taskMcpTools;
+
     @Value("${spring.ai.mcp.server.name}")
     private String configuredMcpServerName;
     @Value("${spring.ai.mcp.server.version}")
@@ -46,9 +49,6 @@ class McpServerIntegrationTests {
         assertFalse(configuredMcpServerVersion.isBlank());
         assertEquals("/sse", configuredSseEndpoint);
     }
-
-    @Autowired
-    private TaskMcpTools taskMcpTools;
 
     @Test
     void mcpServer_registersToolsBean() {

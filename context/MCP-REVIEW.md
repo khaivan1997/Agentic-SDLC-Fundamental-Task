@@ -289,3 +289,13 @@ After 7 passes of review and refinement, the MCP implementation is fully complia
 | 2 | `help_returnsAllToolDescriptions` only checked key existence, not description values | Added assertions verifying each description string matches the `@McpTool` annotations |
 | 3 | Schema test hardcoded `List.of("TODO", "IN_PROGRESS", "DONE")` | Changed to derive expected values from `TaskStatus.values()`, consistent with production code |
 | 4 | `mcpProtocol_supportedVersionFromSdk` used deprecated `LATEST_PROTOCOL_VERSION` without suppression | Added `@SuppressWarnings("deprecation")` at method level |
+
+---
+
+## 13. Eighth Review Pass — Query Optimization & Code Organization
+
+| # | Finding | Fix Applied |
+|---|---------|-------------|
+| 1 | `tasksSummary()` still made 2 DB queries: `countTasksByStatus()` + `count()` | Eliminated `count()` — total is now computed by summing group-by results (1 query instead of 2) |
+| 2 | `@Autowired TaskMcpTools` field was placed between test methods in `McpServerIntegrationTests` | Moved to field section at the top of the class with other `@Autowired`/`@Value` fields |
+| 3 | Extra blank line in `application.properties` between JPA config and MCP metadata | Removed |

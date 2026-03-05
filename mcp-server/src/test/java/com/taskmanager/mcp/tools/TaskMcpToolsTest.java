@@ -171,7 +171,6 @@ class TaskMcpToolsTest {
 
     @Test
     void tasksSummary_returnsCountsFromRepository() {
-        when(taskRepository.count()).thenReturn(6L);
         when(taskRepository.countTasksByStatus()).thenReturn(List.of(
                 new Object[] { TaskStatus.TODO, 2L },
                 new Object[] { TaskStatus.IN_PROGRESS, 3L },
@@ -187,7 +186,6 @@ class TaskMcpToolsTest {
 
     @Test
     void tasksSummary_emptyDatabase_returnsZeroCounts() {
-        when(taskRepository.count()).thenReturn(0L);
         when(taskRepository.countTasksByStatus()).thenReturn(List.of());
 
         TaskSummary summary = tools.tasksSummary();

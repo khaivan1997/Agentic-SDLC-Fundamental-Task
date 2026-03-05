@@ -117,13 +117,15 @@ public class TaskMcpTools {
         for (TaskStatus s : TaskStatus.values()) {
             byStatus.put(s.name(), 0L);
         }
+        long total = 0;
         List<Object[]> results = taskRepository.countTasksByStatus();
         for (Object[] row : results) {
             TaskStatus status = (TaskStatus) row[0];
             Long count = (Long) row[1];
             byStatus.put(status.name(), count);
+            total += count;
         }
-        return new TaskSummary(taskRepository.count(), byStatus);
+        return new TaskSummary(total, byStatus);
     }
 
     private String validate(TaskInput input) {
