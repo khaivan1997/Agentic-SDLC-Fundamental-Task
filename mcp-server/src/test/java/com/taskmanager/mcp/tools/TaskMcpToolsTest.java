@@ -83,6 +83,7 @@ class TaskMcpToolsTest {
                 .map(Enum::name)
                 .toList();
         assertEquals(expectedStatuses, status.get("enum"));
+        assertEquals("TODO", status.get("default"));
         assertEquals(List.of("title"), schema.get("required"));
     }
 

@@ -76,7 +76,7 @@
 
 ## 5. Test Coverage Analysis
 
-### Unit Tests: `TaskMcpToolsTest.java` — 13 tests
+### Unit Tests: `TaskMcpToolsTest.java` — 14 tests
 
 | # | Test | Tool Covered | What it verifies |
 |---|------|-------------|------------------|
@@ -93,6 +93,7 @@
 | 11 | `insertTasks_mixedValidAndInvalid_savesOnlyValid` | `mcp-tasks` | Partial insert: valid saved, invalid rejected |
 | 12 | `insertTasks_withDescriptionTooLong_rejects` | `mcp-tasks` | Description > 500 chars rejected |
 | 13 | `insertTasks_withInvalidStatus_rejects` | `mcp-tasks` | Invalid enum value rejected |
+| 14 | `insertTasks_withTitleTooLong_rejects` | `mcp-tasks` | Title > 100 chars rejected |
 
 **Assessment:** All 4 tools covered with comprehensive variety including edge cases. Uses `ArgumentCaptor` to verify saved entities. Mockito mocks ensure isolation from the DB.
 
@@ -308,3 +309,13 @@ After 7 passes of review and refinement, the MCP implementation is fully complia
 |---|---------|-------------|
 | 1 | `countByStatus(TaskStatus)` in `TaskRepository` is dead code — replaced by `countTasksByStatus()` in pass 5, never used by backend either | Removed method and its unused `TaskStatus` import |
 | 2 | `help()` and `schemaTasks()` lack `@Transactional(readOnly=true)` unlike `tasksSummary()` | **No fix needed** — these methods don't access the database, so adding `@Transactional` would be misleading |
+
+---
+
+## 15. Tenth Review Pass — Schema Completeness & Review Accuracy
+
+| # | Finding | Fix Applied |
+|---|---------|-------------|
+| 1 | Schema `status` field missing `default: "TODO"` — AI agent has no way to know status defaults if omitted | Added `"default", "TODO"` to status property in `schemaTasks()` |
+| 2 | MCP-REVIEW §5 header said "13 tests" but actual count was 14 (title-too-long test was added in pass 4) | Fixed header to "14 tests" and added test #14 to the table |
+| 3 | Protocol test `mcpTasks_bulkInsertAndSummaryOverProtocol` asserts exact `total:1000` | **No fix needed** — H2 uses `create-drop`, so DB is clean per Spring context. Test isolation is correct. |
