@@ -31,9 +31,9 @@ class McpProtocolHandshakeIT {
 
     private McpSyncClient createClient() {
         HttpClientSseClientTransport transport = HttpClientSseClientTransport
-            .builder("http://localhost:" + serverPort)
-            .sseEndpoint(sseEndpoint)
-            .build();
+                .builder("http://localhost:" + serverPort)
+                .sseEndpoint(sseEndpoint)
+                .build();
         return McpClient.sync(transport).build();
     }
 
@@ -62,13 +62,11 @@ class McpProtocolHandshakeIT {
             assertTrue(names.contains("mcp-tasks-summary"));
 
             McpSchema.CallToolResult schemaResult = client.callTool(
-                new McpSchema.CallToolRequest("mcp-schema-tasks", Map.of())
-            );
+                    new McpSchema.CallToolRequest("mcp-schema-tasks", Map.of()));
             assertTrue(Boolean.FALSE.equals(schemaResult.isError()));
 
             McpSchema.CallToolResult summaryResult = client.callTool(
-                new McpSchema.CallToolRequest("mcp-tasks-summary", Map.of())
-            );
+                    new McpSchema.CallToolRequest("mcp-tasks-summary", Map.of()));
             assertTrue(Boolean.FALSE.equals(summaryResult.isError()));
         } finally {
             client.close();
@@ -82,24 +80,25 @@ class McpProtocolHandshakeIT {
             client.initialize();
 
             var tasks = new ArrayList<Map<String, Object>>();
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 1000; i++) {
                 tasks.add(Map.of(
-                    "title", "Proto Task " + i,
-                    "description", "Generated via MCP protocol " + i,
-                    "status", (i % 3 == 0 ? "TODO" : (i % 3 == 1 ? "IN_PROGRESS" : "DONE")),
-                    "dueDate", LocalDate.of(2026, 1, 1).plusDays(i % 20).toString()
-                ));
+                        "title", "Proto Task " + i,
+                        "description", "Generated via MCP protocol " + i,
+                        "status", (i % 3 == 0 ? "TODO" : (i % 3 == 1 ? "IN_PROGRESS" : "DONE")),
+                        "dueDate", LocalDate.of(2026, 1, 1).plusDays(i % 20).toString()));
             }
 
             McpSchema.CallToolResult insertResult = client.callTool(
-                new McpSchema.CallToolRequest("mcp-tasks", Map.of("tasks", tasks))
-            );
+                    new McpSchema.CallToolRequest("mcp-tasks", Map.of("tasks", tasks)));
             assertTrue(Boolean.FALSE.equals(insertResult.isError()));
+            String insertText = ((McpSchema.TextContent) insertResult.content().get(0)).text();
+            assertTrue(insertText.contains("\"inserted\":1000") || insertText.contains("\"inserted\": 1000"));
 
             McpSchema.CallToolResult summaryResult = client.callTool(
-                new McpSchema.CallToolRequest("mcp-tasks-summary", Map.of())
-            );
+                    new McpSchema.CallToolRequest("mcp-tasks-summary", Map.of()));
             assertTrue(Boolean.FALSE.equals(summaryResult.isError()));
+            String summaryText = ((McpSchema.TextContent) summaryResult.content().get(0)).text();
+            assertTrue(summaryText.contains("\"total\":1000") || summaryText.contains("\"total\": 1000"));
         } finally {
             client.close();
         }

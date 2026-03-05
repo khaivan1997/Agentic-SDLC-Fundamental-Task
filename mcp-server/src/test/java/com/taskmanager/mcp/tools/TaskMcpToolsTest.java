@@ -161,9 +161,10 @@ class TaskMcpToolsTest {
     @Test
     void tasksSummary_returnsCountsFromRepository() {
         when(taskRepository.count()).thenReturn(6L);
-        when(taskRepository.countByStatus(TaskStatus.TODO)).thenReturn(2L);
-        when(taskRepository.countByStatus(TaskStatus.IN_PROGRESS)).thenReturn(3L);
-        when(taskRepository.countByStatus(TaskStatus.DONE)).thenReturn(1L);
+        when(taskRepository.countTasksByStatus()).thenReturn(List.of(
+                new Object[] { TaskStatus.TODO, 2L },
+                new Object[] { TaskStatus.IN_PROGRESS, 3L },
+                new Object[] { TaskStatus.DONE, 1L }));
 
         TaskSummary summary = tools.tasksSummary();
 
@@ -176,9 +177,7 @@ class TaskMcpToolsTest {
     @Test
     void tasksSummary_emptyDatabase_returnsZeroCounts() {
         when(taskRepository.count()).thenReturn(0L);
-        when(taskRepository.countByStatus(TaskStatus.TODO)).thenReturn(0L);
-        when(taskRepository.countByStatus(TaskStatus.IN_PROGRESS)).thenReturn(0L);
-        when(taskRepository.countByStatus(TaskStatus.DONE)).thenReturn(0L);
+        when(taskRepository.countTasksByStatus()).thenReturn(List.of());
 
         TaskSummary summary = tools.tasksSummary();
 

@@ -1,0 +1,39 @@
+AgentGarage Step-by-Step Guideline
+
+🎯 Objective
+Build a simple SDLC-related workflow where N8N interacts with a local LLM in your AgentGarage environment.
+
+🧪 Step 1: Start the Environment
+1. The AgentGarage repository is located at `/Users/khai.a.ngo/Projects/Training/agent-garage`.
+2. Open a terminal and navigate to the AgentGarage directory:
+   `cd /Users/khai.a.ngo/Projects/Training/agent-garage`
+3. Start the Docker environment:
+   `docker-compose up -d`
+4. Verify the setup by accessing N8N (usually http://localhost:5678) and OpenWebUI/LLM API via your browser.
+
+💡 Step 2: Choose a Simple SDLC Use Case
+Here are ideas from the prompt. We recommend the simplest one to start: Idea 3.
+- Idea 1: Pull Request Description Generator (Send a commit message, get a summarized PR description).
+- Idea 2: Code Review Suggestions (Send a code snippet or diff, get review comments).
+- Idea 3 (Recommended): User Story to Acceptance Criteria in Gherkin format.
+
+⚙️ Step 3: Create the N8N Workflow
+1. Open your N8N UI (e.g., http://localhost:5678).
+2. Create a new workflow.
+3. Add a Trigger Node: 
+   - Add a "Webhook" node (set it to accept POST requests with JSON payload) or use a manual "Inject" (Manual Trigger) node to start the flow.
+4. Add an LLM / HTTP Request Node: 
+   - If N8N has a dedicated AI/LLM node configured, use it.
+   - Otherwise, use the "HTTP Request" node to call the local LLM API (e.g., Ollama or LM Studio at their respective host ports).
+   - In the Prompt/Body, instruct the LLM: 
+     "You are an Agile Product Owner. Given the following user story, generate acceptance criteria in Gherkin format. 
+     User Story: {{$json.body.userStory}}" (Map the input from the trigger).
+5. Add an Output Node: 
+   - Use a node to save the output to a file or simply return the LLM response in the Webhook Response node.
+
+✅ Step 4: Test and Document
+1. Execute the workflow manually or fire a POST request to the Webhook URL.
+2. Provide a sample input:
+   {"userStory": "As a user, I want to change my password so I can secure my account."}
+3. Wait for the LLM to process and verify it returns correct Gherkin acceptance criteria.
+4. Export your N8N workflow (as a JSON file) or take screenshots to document your success for the assignment!

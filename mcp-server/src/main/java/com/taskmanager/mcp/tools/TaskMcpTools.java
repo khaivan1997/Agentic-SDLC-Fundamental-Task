@@ -5,6 +5,8 @@ import com.taskmanager.mcp.dto.TaskSummary;
 import com.taskmanager.model.Task;
 import com.taskmanager.model.TaskStatus;
 import com.taskmanager.repository.TaskRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,8 @@ import java.util.Map;
 
 @Component
 public class TaskMcpTools {
+
+    private static final Logger log = LoggerFactory.getLogger(TaskMcpTools.class);
 
     private final TaskRepository taskRepository;
 
@@ -36,8 +40,7 @@ public class TaskMcpTools {
 
         return Map.of(
                 "module", "mcp-server",
-                "tools", tools
-        );
+                "tools", tools);
     }
 
     @McpTool(name = "mcp-schema-tasks", description = "Returns the schema for the tasks table")
@@ -45,7 +48,8 @@ public class TaskMcpTools {
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("id", Map.of("type", "integer", "readOnly", true));
         properties.put("title", Map.of("type", "string", "maxLength", Task.TITLE_MAX_LENGTH));
-        properties.put("description", Map.of("type", "string", "maxLength", Task.DESCRIPTION_MAX_LENGTH, "nullable", true));
+        properties.put("description",
+                Map.of("type", "string", "maxLength", Task.DESCRIPTION_MAX_LENGTH, "nullable", true));
         List<String> statusValues = Arrays.stream(TaskStatus.values())
                 .map(Enum::name)
                 .toList();
@@ -56,14 +60,15 @@ public class TaskMcpTools {
                 "table", "tasks",
                 "type", "object",
                 "required", List.of("title"),
-                "properties", properties
-        );
+                "properties", properties);
     }
 
     @Transactional
     @McpTool(name = "mcp-tasks", description = "Bulk inserts tasks into PostgreSQL")
     public Map<String, Object> insertTasks(
             @McpToolParam(description = "A JSON array of task objects") List<TaskInput> tasks) {
+        log.info("MCP Tool 'mcp-tasks' called by AI agent to insert {} tasks", tasks != null ? tasks.size() : 0);
+
         if (tasks == null || tasks.isEmpty()) {
             return Map.of("inserted", 0, "rejected", 0, "message", "No tasks received");
         }
@@ -99,15 +104,24 @@ public class TaskMcpTools {
         if (!errors.isEmpty()) {
             response.put("errors", errors);
         }
+
+        log.info("MCP Tool 'mcp-tasks' completed: inserted={}, rejected={}", validTasks.size(), errors.size());
         return response;
     }
 
     @Transactional(readOnly = true)
     @McpTool(name = "mcp-tasks-summary", description = "Returns count of tasks grouped by status")
     public TaskSummary tasksSummary() {
+        log.info("MCP Tool 'mcp-tasks-summary' called by AI agent");
         Map<String, Long> byStatus = new LinkedHashMap<>();
         for (TaskStatus s : TaskStatus.values()) {
-            byStatus.put(s.name(), taskRepository.countByStatus(s));
+            byStatus.put(s.name(), 0L);
+        }
+        List<Object[]> results = taskRepository.countTasksByStatus();
+        for (Object[] row : results) {
+            TaskStatus status = (TaskStatus) row[0];
+            Long count = (Long) row[1];
+            byStatus.put(status.name(), count);
         }
         return new TaskSummary(taskRepository.count(), byStatus);
     }
