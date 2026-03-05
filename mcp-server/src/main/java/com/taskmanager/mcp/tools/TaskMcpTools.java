@@ -53,7 +53,7 @@ public class TaskMcpTools {
         List<String> statusValues = Arrays.stream(TaskStatus.values())
                 .map(Enum::name)
                 .toList();
-        properties.put("status", Map.of("type", "string", "enum", statusValues, "default", "TODO"));
+        properties.put("status", Map.of("type", "string", "enum", statusValues, "default", TaskStatus.TODO.name()));
         properties.put("dueDate", Map.of("type", "string", "format", "date", "nullable", true));
 
         return Map.of(

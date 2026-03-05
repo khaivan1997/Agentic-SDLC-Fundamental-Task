@@ -319,3 +319,13 @@ After 7 passes of review and refinement, the MCP implementation is fully complia
 | 1 | Schema `status` field missing `default: "TODO"` — AI agent has no way to know status defaults if omitted | Added `"default", "TODO"` to status property in `schemaTasks()` |
 | 2 | MCP-REVIEW §5 header said "13 tests" but actual count was 14 (title-too-long test was added in pass 4) | Fixed header to "14 tests" and added test #14 to the table |
 | 3 | Protocol test `mcpTasks_bulkInsertAndSummaryOverProtocol` asserts exact `total:1000` | **No fix needed** — H2 uses `create-drop`, so DB is clean per Spring context. Test isolation is correct. |
+
+---
+
+## 16. Eleventh Review Pass — Constant Derivation & Import Style
+
+| # | Finding | Fix Applied |
+|---|---------|-------------|
+| 1 | Schema `default: "TODO"` was hardcoded — inconsistent with enum derivation pattern used elsewhere in the same method | Changed to `TaskStatus.TODO.name()` for consistency |
+| 2 | Test asserted literal `"TODO"` for schema default | Changed to `TaskStatus.TODO.name()` |
+| 3 | `Task.java` used wildcard import `jakarta.persistence.*` | Expanded to 8 explicit imports (`Column`, `Entity`, `EnumType`, `Enumerated`, `GeneratedValue`, `GenerationType`, `Id`, `Table`) |

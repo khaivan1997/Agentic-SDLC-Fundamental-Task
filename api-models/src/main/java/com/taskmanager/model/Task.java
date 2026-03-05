@@ -1,6 +1,13 @@
 package com.taskmanager.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
@@ -21,7 +28,8 @@ public class Task {
     @Column(nullable = false, length = TITLE_MAX_LENGTH)
     private String title;
 
-    @Size(max = DESCRIPTION_MAX_LENGTH, message = "Description must not exceed " + DESCRIPTION_MAX_LENGTH + " characters")
+    @Size(max = DESCRIPTION_MAX_LENGTH, message = "Description must not exceed " + DESCRIPTION_MAX_LENGTH
+            + " characters")
     @Column(length = DESCRIPTION_MAX_LENGTH)
     private String description;
 
