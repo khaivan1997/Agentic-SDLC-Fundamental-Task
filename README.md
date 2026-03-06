@@ -79,7 +79,7 @@ The UI is available at `http://localhost:5173`.
 ### 5. Run the MCP Server
 
 ```bash
-java -jar mcp-server/target/mcp-server-0.0.1-SNAPSHOT.jar
+java -jar mcp-server/target/mcp-server-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
 ```
 
 The MCP SSE endpoint is available at `http://localhost:8081/sse`.
@@ -148,9 +148,10 @@ mvn -pl mcp-server test
 
 | Variable | Default | Used By |
 | :--- | :--- | :--- |
-| `DB_URL` | `jdbc:postgresql://localhost:5436/taskdb` | backend, mcp-server |
-| `DB_USERNAME` | `taskuser` | backend, mcp-server |
-| `DB_PASSWORD` | `taskpass` | backend, mcp-server |
+| `DB_URL` | `jdbc:postgresql://localhost:5436/taskdb` (mcp-server: local profile only) | backend, mcp-server |
+| `DB_USERNAME` | `taskuser` (mcp-server: local profile only) | backend, mcp-server |
+| `DB_PASSWORD` | `taskpass` (mcp-server: local profile only) | backend, mcp-server |
+| `MCP_SERVER_API_KEY` | _(required in non-local profiles)_ | mcp-server |
 | `APP_CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:5174` | backend |
 
 ---

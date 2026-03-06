@@ -17,13 +17,19 @@ This module provides a Model Context Protocol (MCP) server for the Task Manager 
 | `mcp-tasks-summary` | Returns an aggregate count of all tasks in the database, grouped by their current status (e.g., TODO, IN_PROGRESS, DONE). |
 
 ## Security
-The MCP `/sse` endpoint is protected by an API Key filter. All requests must include the secret key to be processed.
+MCP transport endpoints are protected by an API Key filter:
+- `/sse`
+- `/mcp/message` (default SSE message endpoint)
+
+All requests must include the secret key to be processed.
 
 **Authentication Headers (pick one):**
 - `Authorization: Bearer <your-api-key>`
 - `X-API-Key: <your-api-key>`
 
-The expected key is configured via the `mcp.server.api-key` property in `application.properties` (or environment variable `MCP_SERVER_API_KEY`). The default for dev/test is `test-api-key`.
+The expected key is configured via the `mcp.server.api-key` property in `application.properties` (backed by environment variable `MCP_SERVER_API_KEY`).
+In production, `MCP_SERVER_API_KEY` must be provided explicitly.
+For safety, startup rejects the insecure value `test-api-key` unless running with `test`, `local`, or `dev` profile.
 
 ## Configuration Examples
 
@@ -46,7 +52,38 @@ If you want to use this MCP server with the Claude Desktop app, you can configur
 ## Running the Server
 The MCP server can be run as a standalone Spring Boot application, connecting to the shared PostgreSQL database.
 
+### Local profile (dev defaults)
+This project includes `application-local.properties` for local development:
+- DB: `jdbc:postgresql://localhost:5436/taskdb`
+- user/password: `taskuser` / `taskpass`
+- API key: `test-api-key`
+
 ```bash
 cd mcp-server
-mvn spring-boot:run
+mvn spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+### Production-style run (explicit secrets required)
+`application.properties` requires these environment variables:
+- `DB_URL`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `MCP_SERVER_API_KEY`
+
+### Health endpoint
+Actuator health endpoint is enabled:
+- `GET /actuator/health`
+
+### Container image
+Build and run:
+```bash
+cd mcp-server
+mvn -DskipTests package
+docker build -t task-manager-mcp .
+docker run --rm -p 8081:8081 \
+  -e DB_URL=jdbc:postgresql://host.docker.internal:5436/taskdb \
+  -e DB_USERNAME=taskuser \
+  -e DB_PASSWORD=taskpass \
+  -e MCP_SERVER_API_KEY=change-me \
+  task-manager-mcp
 ```

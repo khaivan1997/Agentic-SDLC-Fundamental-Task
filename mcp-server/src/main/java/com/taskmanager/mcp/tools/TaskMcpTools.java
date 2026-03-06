@@ -7,6 +7,7 @@ import com.taskmanager.model.TaskStatus;
 import com.taskmanager.repository.TaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Component;
@@ -68,7 +69,8 @@ public class TaskMcpTools {
     @McpTool(name = "mcp-tasks", description = "Bulk inserts tasks into PostgreSQL")
     public Map<String, Object> insertTasks(
             @McpToolParam(description = "A JSON array of task objects") List<TaskInput> tasks) {
-        log.info("MCP Tool 'mcp-tasks' called by AI agent to insert {} tasks", tasks != null ? tasks.size() : 0);
+        log.info("MCP Tool 'mcp-tasks' called client={} to insert {} tasks",
+                mcpClient(), tasks != null ? tasks.size() : 0);
 
         if (tasks == null || tasks.isEmpty()) {
             return Map.of("inserted", 0, "rejected", 0, "message", "No tasks received");
@@ -110,14 +112,15 @@ public class TaskMcpTools {
             response.put("errors", errors);
         }
 
-        log.info("MCP Tool 'mcp-tasks' completed: inserted={}, rejected={}", validTasks.size(), errors.size());
+        log.info("MCP Tool 'mcp-tasks' completed client={}: inserted={}, rejected={}",
+                mcpClient(), validTasks.size(), errors.size());
         return response;
     }
 
     @Transactional(readOnly = true)
     @McpTool(name = "mcp-tasks-summary", description = "Returns count of tasks grouped by status")
     public TaskSummary tasksSummary() {
-        log.info("MCP Tool 'mcp-tasks-summary' called by AI agent");
+        log.info("MCP Tool 'mcp-tasks-summary' called client={}", mcpClient());
         Map<String, Long> byStatus = new LinkedHashMap<>();
         for (TaskStatus s : TaskStatus.values()) {
             byStatus.put(s.name(), 0L);
@@ -169,5 +172,9 @@ public class TaskMcpTools {
             return null;
         }
         return description.trim();
+    }
+
+    private String mcpClient() {
+        return String.valueOf(MDC.get("mcp.client"));
     }
 }

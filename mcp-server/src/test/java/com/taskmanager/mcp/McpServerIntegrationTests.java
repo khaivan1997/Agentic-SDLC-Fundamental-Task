@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -39,7 +40,28 @@ class McpServerIntegrationTests {
     @Test
     void mcpServer_startsAndExposesSseEndpoint() throws Exception {
         mockMvc.perform(get("/sse")
+                .header("Authorization", "Bearer " + "test-api-key")
                 .accept(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void mcpServer_rejectsMissingApiKeyOnSse() throws Exception {
+        mockMvc.perform(get("/sse").accept(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void mcpServer_rejectsMissingApiKeyOnSseMessageEndpoint() throws Exception {
+        mockMvc.perform(post("/mcp/message")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void mcpServer_exposesActuatorHealth() throws Exception {
+        mockMvc.perform(get("/actuator/health").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
