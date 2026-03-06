@@ -284,4 +284,21 @@ class TaskMcpToolsTest {
         assertEquals(0, result.get("inserted"));
         assertEquals(1, result.get("rejected"));
     }
+
+    @Test
+    void insertTasks_overMaxBatchSize_rejectsEntireBatch() {
+        List<TaskInput> massiveBatch = new ArrayList<>();
+        // Create 10,001 items which is strictly greater than MAX_BATCH_SIZE
+        for (int i = 0; i < 10001; i++) {
+            TaskInput input = new TaskInput();
+            input.setTitle("Task " + i);
+            massiveBatch.add(input);
+        }
+
+        Map<String, Object> result = tools.insertTasks(massiveBatch);
+
+        verify(taskRepository, never()).saveAll(anyList());
+        assertTrue(result.containsKey("error"));
+        assertTrue(result.get("error").toString().contains("exceeds limit of 10000"));
+    }
 }

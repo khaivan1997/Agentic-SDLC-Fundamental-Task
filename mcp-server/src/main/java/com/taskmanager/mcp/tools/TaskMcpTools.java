@@ -23,6 +23,7 @@ import java.util.Map;
 public class TaskMcpTools {
 
     private static final Logger log = LoggerFactory.getLogger(TaskMcpTools.class);
+    private static final int MAX_BATCH_SIZE = 10_000;
 
     private final TaskRepository taskRepository;
 
@@ -71,6 +72,10 @@ public class TaskMcpTools {
 
         if (tasks == null || tasks.isEmpty()) {
             return Map.of("inserted", 0, "rejected", 0, "message", "No tasks received");
+        }
+
+        if (tasks.size() > MAX_BATCH_SIZE) {
+            return Map.of("error", "Batch size " + tasks.size() + " exceeds limit of " + MAX_BATCH_SIZE);
         }
 
         List<Task> validTasks = new ArrayList<>();

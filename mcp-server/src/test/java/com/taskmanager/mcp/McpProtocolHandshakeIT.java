@@ -33,6 +33,7 @@ class McpProtocolHandshakeIT {
         HttpClientSseClientTransport transport = HttpClientSseClientTransport
                 .builder("http://localhost:" + serverPort)
                 .sseEndpoint(sseEndpoint)
+                .customizeRequest(req -> req.header("Authorization", "Bearer test-api-key"))
                 .build();
         return McpClient.sync(transport).build();
     }
